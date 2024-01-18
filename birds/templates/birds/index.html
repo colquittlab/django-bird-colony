@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %} brainard-lab : bird colony {% endblock %}
+
+{% block content %}
+
+Here's the animal database. Here are some things you can do:
+
+<h3>Lists</h3>
+<p><a href="{% url 'birds:animals' %}?living=True&reserved_by_name={{ user }}">your birds</a></p>
+<p><a href="{% url 'birds:animals' %}?living=True">all the living birds</a></p>
+<p><a href="{% url 'birds:animals' %}?living=True&available=True">all the unclaimed birds</a></p>
+<p><a href="{% url 'birds:animals' %}?living=True&available=True&sex=M">all the unclaimed male birds</a></p>
+<p><a href="{% url 'birds:animals' %}?living=True&available=True&sex=F">all the unclaimed female birds</a></p>
+<p><a href="{% url 'birds:animals' %}">all the birds</a></p>
+<p><a href="{% url 'birds:events' %}">all events</a></p>
+<p><a href="{% url 'birds:nests' %}">view nests</a></p>
+
+<h3>Search</h3>
+<p><a href="{% url 'birds:animals_search' %}">bird search</a></p>
+
+<h3>Summary Reports</h3>
+
+<p><a href="{% url 'birds:event_summary' today.year today.month %}">for this month</a></p>
+<p><a href="{% url 'birds:event_summary' lastmonth.year lastmonth.month %}">for last month</a></p>
+<p><a href="{% url 'birds:event_summary' lastmonth.year 13%}">for the year (sept-sept)</a></p>
+
+
+<h3>Data Entry Forms</h3>
+
+<p><a href="{% url 'birds:new_animal' %}">add new bird</a></p>
+<p><a href="{% url 'birds:new_event' %}">add new event</a></p>
+<p><a href="{% url 'birds:clutch' %}">add clutch of birds</a></p>
+
+<h3>API</h3>
+
+<p>You can also query the database using the HTTP API. Specify query parameters using the URL.</p>
+
+<h4>Entry Points</h4>
+
+<p><code>{% url 'birds:animals_api' %}</code> retrieves a list of animals. Supported query parameters are <code>uuid</code>, <code>color</code>, <code>band</code>, <code>species</code>, <code>sex</code>, <code>available</code>, <code>reserved_by</code>. Most text-based query parameters are case-insensitive and will do partial matches.</p>
+
+<p><code>{% url 'birds:animals_api' %}my-uuid/</code> retrieves the record for a single animal by by uuid. Includes some additional information not returned by the list query.</p>
+
+<p><code>{% url 'birds:events_api' %}</code> retrieves a list of events. Supported query parameters: <code>animal</code> (uuid), <code>color</code>, <code>band</code>, <code>species</code>, <code>location</code>, <code>entered_by</code>, <code>description</code>.</p>
+
+<h4>Examples</h4>
+
+<p><code>curl http://my.domain{% url 'birds:animals_api' %}?species=zebf&available=True</code> will retrieve all available (unreserved) zebra finches.</p>
+
+<p><code>curl http://my.domain{% url 'birds:events_api' %}?animal=bd0dcfc1</code> will retrieve all the events for the bird whose uuid begins with <code>bd0dcfc1</code>.</p>
+
+
+{% endblock %}

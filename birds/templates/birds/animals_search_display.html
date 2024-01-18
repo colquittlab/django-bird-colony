@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load widget_tweaks %}
+{% load render_table from django_tables2 %}
+{% load bootstrap3 %}
+{% block title %} brainard-lab : bird colony : add bird {% endblock title%}
+{% block content %}
+
+{% include "birds/home.html" %} 
+
+<h2>Birds</h2>
+{% if filter %}
+    <form action="" method="get" class="form form-inline">
+        {% bootstrap_form filter.form layout='inline' %}
+        {% bootstrap_button 'filter' %}
+    </form>
+{% endif %}
+
+{% render_table results %}
+{%endblock content %}

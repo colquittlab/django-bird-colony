@@ -1,0 +1,159 @@
+{% extends "rest_framework/base.html" %}
+
+{% block title %} brainard-lab : bird colony {% endblock %}
+
+{% block content %}
+
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Band entry</h3>
+  </div>
+  <div class="panel-body">
+    <form action="{% url 'birds:animals_search' %}" class="form-horizontal" method="post" role="form">
+      {% csrf_token %}
+      <p><strong>Instructions</strong>: This form is for adding a single banded
+      bird to the database. For birds hatched in the breeding colony, determine
+      hatch date in a clutch using the nest observation sheet. Parents are
+      required, and species will be inferred from the parents. Zebra finches
+      should be banded between 12 to 18 days of age.</p>
+
+      <p>For birds acquired by other methods (including capture), parents are
+      not required, but species must be set manually.</p>
+
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <div class="form-group {% if form.acq_status.errors %}has-error{% endif %}">
+        <label for="id_acq_status" class="col-sm-2 control-label">Acquired method</label>
+        <div class="col-sm-5">
+          {% render_field form.acq_status class+="form-control" %}
+        </div>
+      </div>
+
+
+     <!-- <div class="form-group {% if form.acq_date.errors %}has-error{% endif %}">
+        <label for="id_acq_date" class="col-sm-2 control-label">Acquisition date</label>
+        <div class="col-sm-3">
+          <div class="input-group date" id="datetimepicker1">
+            {% render_field form.acq_date class+="form-control" data-format="MM/dd/YYYY" %}
+            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span>
+            </span>
+          </div>
+        </div>
+      </div> -->
+
+      <div class="form-group {% if form.species.errors %}has-error{% endif %}">
+        <label for="id_species" class="col-sm-2 control-label">Species</label>
+        <div class="col-sm-5">
+          {% render_field form.species class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.sex.errors %}has-error{% endif %}">
+        <label for="id_sex" class="col-sm-2 control-label">Sex</label>
+        <div class="col-sm-5">
+          {% render_field form.sex class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.nest.errors %}has-error{% endif %}">
+        <label for="id_nest"url(r'^nests/$', views.NestList.as_view(), name='nests'), class="col-sm-2 control-label">Nest</label>
+        <div class="col-sm-5">
+          {% render_field form.nest class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.sire.errors %}has-error{% endif %}">
+        <label for="id_sire" class="col-sm-2 control-label">Sire</label>
+        <div class="col-sm-5">
+          {% render_field form.sire class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.dam.errors %}has-error{% endif %}">
+        <label for="id_dam" class="col-sm-2 control-label">Dam</label>
+        <div class="col-sm-5">
+          {% render_field form.dam class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.banding_date.errors %}has-error{% endif %}">
+        <label for="id_banding_date" class="col-sm-2 control-label">Banding date</label>
+        <div class="col-sm-3">
+          <div class="input-group date" id="datetimepicker2">
+            {% render_field form.banding_date class+="form-control" data-format="MM/dd/YYYY" %}
+            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group {% if form.band_color.errors %}has-error{% endif %}">
+        <label for="id_band_color1" class="col-sm-2 control-label">Band1 color</label>
+        <div class="col-sm-5">
+          {% render_field form.band_color1 class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.band_number.errors %}has-error{% endif %}">
+        <label for="id_band_number1" class="col-sm-2 control-label">Band1 number</label>
+        <div class="col-sm-3">
+          {% render_field form.band_number1 class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.band_color2.errors %}has-error{% endif %}">
+        <label for="id_band_color2" class="col-sm-2 control-label">Band2 color</label>
+        <div class="col-sm-5">
+          {% render_field form.band_color2 class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.band_number2.errors %}has-error{% endif %}">
+        <label for="id_band_number2" class="col-sm-2 control-label">Band2 number</label>
+        <div class="col-sm-3">
+          {% render_field form.band_number2 class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.band.errors %}has-error{% endif %}">
+        <label for="id_band" class="col-sm-2 control-label">Band2 number</label>
+        <div class="col-sm-3">
+          {% render_field form.band class+="form-control" %}
+        </div>
+      </div>
+
+
+      <div class="form-group {% if form.location.errors %}has-error{% endif %}">
+        <label for="id_location" class="col-sm-2 control-label">Location</label>
+        <div class="col-sm-5">
+          {% render_field form.location class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.comments.errors %}has-error{% endif %}">
+        <label for="id_comments" class="col-sm-2 control-label">Comments</label>
+        <div class="col-sm-5">
+          {% render_field form.comments class+="form-control" rows="3"%}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.user.errors %}has-error{% endif %}">
+        <label for="id_user" class="col-sm-2 control-label">Entered by</label>
+        <div class="col-sm-3">
+          {% render_field form.user class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+          <button type="submit" class="btn btn-default">Add bird</button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+{% endblock %}

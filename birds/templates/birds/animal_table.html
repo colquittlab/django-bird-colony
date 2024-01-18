@@ -1,0 +1,39 @@
+{% load date_fmt %}
+<p>NB: When alive is False, age is at death or relase</p>
+
+<table class="table table-striped table-condensed">
+  <thead>
+    <th>Name</th>
+    <th>Species</th>
+    <th>Band</th>
+    <th><a href="?order_by=sex">Sex</th>
+    <th><a href="?order_by=age_days">Age (days)</a></th>
+    <th><a href="?order_by=alive">Alive</th>
+    <th><a href="?order_by=location">Location</th>
+    <th>Children</th>
+    <th>UUID</th>
+    <th>Reserved</th>
+  </thead>
+  <tbody>
+    {% for animal in animal_list %}
+        <tr>
+          <td><a href="{{ animal.get_absolute_url }}">{{ animal.name }}</a></td>
+          <td>{{ animal.species }}</td>
+          <td>{{ animal.band }}</td>
+          <td>{{ animal.sex }}</td>
+          <td>{{ animal.age_days|agestr }}</td>
+          <td>{{ animal.alive}}</td>
+          <td>{{ animal.location}}</td>
+          <td>{{ animal.nchildren|last}}</td>
+          <td>{{ animal.uuid }}</td>
+		  <td>{{ animal.song_speed }} </td>
+		  <td>{{ animal.call_speed }} </td>
+		  <td>{{ animal.repeats }} </td>
+		  <td>{{ animal.seqvar }} </td>
+		  
+          <td>{% if animal.reserved_by %}{{ animal.reserved_by }}{% endif %}</td>
+          <td></td>
+        </tr>
+    {% endfor %}
+  </tbody>
+</table>
