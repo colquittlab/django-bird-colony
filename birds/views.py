@@ -5,14 +5,15 @@ import datetime
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.views import generic
 from django.views.generic.edit import FormMixin
 from django.db.models import Min, F
 from rest_framework import generics
 from rest_framework import mixins
 from rest_framework.response import Response
-from django_filters import rest_framework as filters
+from django_filters import rest_framework as filters_rest
+import django_filters as filters
 from django_filters.views import FilterView
 from django_tables2 import RequestConfig
 from django_tables2 import SingleTableMixin, SingleTableView
@@ -25,29 +26,29 @@ from .tables import AnimalTable, NestTable
 import ipdb
 
 class AnimalFilter(filters.FilterSet):
-    uuid = filters.CharFilter(name="uuid", lookup_expr="istartswith")
-    color1 = filters.CharFilter(name="band_color", lookup_expr="exact")
-    color2 = filters.CharFilter(name="band_color2", lookup_expr="exact")
-    band1 = filters.NumberFilter(name="band_number", lookup_expr="exact")
-    band2 = filters.NumberFilter(name="band_number2", lookup_expr="exact")
-    location = filters.CharFilter(name="last_location", lookup_expr="exact")
-    colorband = filters.CharFilter(name="band", lookup_expr="iexact")
-    species = filters.CharFilter(name="species__code", lookup_expr="iexact")
-    sex = filters.CharFilter(name="sex", lookup_expr="exact")
-    repeats = filters.CharFilter(name="repeats", lookup_expr="exact")
-    seqvar = filters.CharFilter(name="seqvar", lookup_expr="exact")
+    uuid = filters.CharFilter(field_name="uuid", lookup_expr="istartswith")
+    color1 = filters.CharFilter(field_name="band_color", lookup_expr="exact")
+    color2 = filters.CharFilter(field_name="band_color2", lookup_expr="exact")
+    band1 = filters.NumberFilter(field_name="band_number", lookup_expr="exact")
+    band2 = filters.NumberFilter(field_name="band_number2", lookup_expr="exact")
+    location = filters.CharFilter(field_name="last_location", lookup_expr="exact")
+    colorband = filters.CharFilter(field_name="band", lookup_expr="iexact")
+    species = filters.CharFilter(field_name="species__code", lookup_expr="iexact")
+    sex = filters.CharFilter(field_name="sex", lookup_expr="exact")
+    repeats = filters.CharFilter(field_name="repeats", lookup_expr="exact")
+    seqvar = filters.CharFilter(field_name="seqvar", lookup_expr="exact")
     
-    nest = filters.CharFilter(name="nest__uuid", lookup_expr="exact")
-    available = filters.BooleanFilter(name="reserved_by", lookup_expr="isnull")
-    reserved_by = filters.CharFilter(name="reserved_by__username", lookup_expr="iexact")
-    reserved_by_name = filters.CharFilter(name="reserved_by__username", lookup_expr="iexact")
-    song_speed_greaterthan = filters.NumberFilter(name="song_speed", lookup_expr="gte");
-    song_speed_lessthanthan = filters.NumberFilter(name="song_speed", lookup_expr="lte");
-    call_speed_greaterthan = filters.NumberFilter(name="call_speed", lookup_expr="gte");
-    call_speed_lessthanthan = filters.NumberFilter(name="call_speed", lookup_expr="lte");    
-    parent = filters.CharFilter(name="parents__uuid", lookup_expr="istartswith")
-    child = filters.CharFilter(name="children__uuid", lookup_expr="istartswith")
-    alive = filters.BooleanFilter(name="alive", lookup_expr="exact", widget=filters.BooleanWidget() )
+    nest = filters.CharFilter(field_name="nest__uuid", lookup_expr="exact")
+    available = filters.BooleanFilter(field_name="reserved_by", lookup_expr="isnull")
+    reserved_by = filters.CharFilter(field_name="reserved_by__username", lookup_expr="iexact")
+    reserved_by_name = filters.CharFilter(field_name="reserved_by__username", lookup_expr="iexact")
+    song_speed_greaterthan = filters.NumberFilter(field_name="song_speed", lookup_expr="gte");
+    song_speed_lessthanthan = filters.NumberFilter(field_name="song_speed", lookup_expr="lte");
+    call_speed_greaterthan = filters.NumberFilter(field_name="call_speed", lookup_expr="gte");
+    call_speed_lessthanthan = filters.NumberFilter(field_name="call_speed", lookup_expr="lte");    
+    parent = filters.CharFilter(field_name="parents__uuid", lookup_expr="istartswith")
+    child = filters.CharFilter(field_name="children__uuid", lookup_expr="istartswith")
+    alive = filters.BooleanFilter(field_name="alive", lookup_expr="exact", widget=filters.widgets.BooleanWidget() )
 
     class Meta:
         model = Animal
@@ -55,13 +56,13 @@ class AnimalFilter(filters.FilterSet):
 
 
 class EventFilter(filters.FilterSet):
-    animal = filters.CharFilter(name="animal__uuid", lookup_expr="istartswith")
-    color = filters.CharFilter(name="animal__band_color__name", lookup_expr="iexact")
-    band = filters.NumberFilter(name="animal__band_number", lookup_expr="exact")
-    species = filters.CharFilter(name="animal__species__code", lookup_expr="iexact")
-    location = filters.CharFilter(name="location__name", lookup_expr="icontains")
-    entered_by = filters.CharFilter(name="entered_by__username", lookup_expr="icontains")
-    description = filters.CharFilter(name="description", lookup_expr="icontains")
+    animal = filters.CharFilter(field_name="animal__uuid", lookup_expr="istartswith")
+    color = filters.CharFilter(field_name="animal__band_color__name", lookup_expr="iexact")
+    band = filters.NumberFilter(field_name="animal__band_number", lookup_expr="exact")
+    species = filters.CharFilter(field_name="animal__species__code", lookup_expr="iexact")
+    location = filters.CharFilter(field_name="location__name", lookup_expr="icontains")
+    entered_by = filters.CharFilter(field_name="entered_by__username", lookup_expr="icontains")
+    description = filters.CharFilter(field_name="description", lookup_expr="icontains")
 
     class Meta:
         model = Event
@@ -70,10 +71,10 @@ class EventFilter(filters.FilterSet):
         }
 
 class NestFilter(filters.FilterSet):
-    uuid = filters.CharFilter(name="uuid", lookup_expr="istartswith")
-    name = filters.CharFilter(name="name", lookup_expr="istartswith")
-    sire = filters.CharFilter(name="sire__uuid", lookup_expr="istartswith")
-    dam = filters.CharFilter(name="dam__uuid", lookup_expr="istartswith")
+    uuid = filters.CharFilter(field_name="uuid", lookup_expr="istartswith")
+    name = filters.CharFilter(field_name="name", lookup_expr="istartswith")
+    sire = filters.CharFilter(field_name="sire__uuid", lookup_expr="istartswith")
+    dam = filters.CharFilter(field_name="dam__uuid", lookup_expr="istartswith")
 
     class Meta:
         model = Nest
@@ -108,10 +109,10 @@ class AnimalTableList(SingleTableMixin, FilterView):
         if self.request.GET.get("living", False):
             qs = self.model.living.annotate(acq_date=Min("event__date"))#.order_by("acq_date")
         else:
-            #qs = self.model.objects.annotate(age_days=F("age_days")).order_by("age_days")
+        #qs = self.model.objects.annotate(age_days=F("age_days")).order_by("age_days")
             qs = self.model.objects.all()
         qsf = AnimalFilter(self.request.GET, queryset=qs).qs
-        qsf = qsf.order_by('-age_days')
+        #qsf = qsf.order_by('-age_days')
         return qsf
 
 class EventList(FilterView, generic.list.MultipleObjectMixin):
@@ -450,7 +451,7 @@ class EventSummary(generic.base.TemplateView):
 class APIAnimalsList(generics.ListAPIView):
     queryset = Animal.objects.all()
     serializer_class = AnimalSerializer
-    filter_backends = (filters.DjangoFilterBackend,)
+    filter_backends = (filters_rest.DjangoFilterBackend,)
     filter_class = AnimalFilter
 
     def get_queryset(self):
@@ -469,7 +470,7 @@ class APIAnimalDetail(generics.RetrieveAPIView):
 class APIEventsList(generics.ListAPIView):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
-    filter_backends = (filters.DjangoFilterBackend,)
+    filter_backends = (filters_rest.DjangoFilterBackend,)
     filter_class = EventFilter
 
 

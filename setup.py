@@ -4,8 +4,7 @@ import os
 import sys
 if sys.hexversion < 0x02060000:
     raise RuntimeError("Python 2.6 or higher required")
-from setuptools import setup, find_packages
-
+from setuptools import setup, find_packages, find_namespace_packages
 
 VERSION = '0.5.6'
 cls_txt = """
@@ -28,6 +27,7 @@ setup(
     author='C Daniel Meliza',
     maintainer='C Daniel Meliza',
     url= "https://github.com/melizalab/django-bird-colony",
-    packages=find_packages(exclude=["*test*"]),
+    #packages=find_packages(exclude=["*test*"]),
+    packages=find_namespace_packages(exclude=["*test*"]),
     include_package_data=True,
 )

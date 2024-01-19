@@ -8,7 +8,7 @@ import posixpath as pp
 
 import ipdb
 
-from django.utils.encoding import python_2_unicode_compatible
+from six import python_2_unicode_compatible
 from django.urls import reverse
 from django.db import models
 from django.conf import settings

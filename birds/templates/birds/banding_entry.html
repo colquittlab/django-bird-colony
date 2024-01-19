@@ -1,12 +1,15 @@
 {% extends "base.html" %}
-{% load staticfiles %}
+{% load bootstrap3 %}
+{% load static %}
 {% load widget_tweaks %}
 
-{% block title %} brainard-lab : bird colony : add bird {% endblock title%}
+{% block title %} Colquitt lab : bird colony : add bird {% endblock title%}
 
+{% comment %}
 {% block css %}
     <link href="{% static 'datepicker/css/bootstrap-datetimepicker.min.css' %}" rel="stylesheet">
 {% endblock %}
+{% endcomment %}
 
 {% block scripts %}
 <script src="{% static 'local/js/moment.min.js' %}"></script>

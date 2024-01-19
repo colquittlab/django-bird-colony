@@ -6,10 +6,11 @@
 {% block content %}
 <html>
 <head>
-<h2>Birds</h2>
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+  <h2>Birds</h2>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
 </head>
 <body>
+
 {% render_table table %}
 
 <p><a href="{% url 'birds:new_animal' %}">add new animal</a></p>
