@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %} Colquitt lab : matings {% endblock %}
+
+{% block content %}
+<h2>{% if header_text %}{{ header_text}}{% else %}Matings{% endif %}</h2>
+<table class="table table-striped table-condensed">
+  <thead>
+    <th>Nest</th>
+    <th>Sire</th>
+    <th>Dam</th>
+    <th>Date</th>
+  </thead>
+  <tbody>
+    {% for mating in mating_list %}
+        <tr>
+          <td><a href="{{ mating.nest.get_absolute_url }}">{{ mating.nest.name }}</a></td>
+          <td>{{ mating.sire }}</td>
+          <td>{{ mating.dam }}</td>
+          <td>{{ mating.created }}</td>
+        </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a> |
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+            | <a href="?page={{ page_obj.next_page_number }}">next</a>
+        {% endif %}
+    </span>
+</div>
+<p><a href="new/">add new mating</a></p>
+{% endblock %}

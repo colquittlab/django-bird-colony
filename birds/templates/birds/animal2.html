@@ -29,8 +29,8 @@
   <dt>acquired</dt><dd>{{ animal.acquisition_event.event_date }}</dd>
   <dt>age</dt><dd>{{ animal.age_days }}</dd>
   <dt>nest</dt><dd>{{ animal.nest }}</dd>
-  <dt>sire</dt><dd>{% if animal.sire %}<a href="{{ animal.sire.get_absolute_url }}">{{ animal.sire }}</a>{% endif %}</dd>
-  <dt>dam</dt><dd>{% if animal.dam %}<a href="{{ animal.dam.get_absolute_url }}">{{ animal.dam }}</a>{% endif %}</dd>
+  <dt>sire</dt><dd>{% if animal.sire.band %}<a href="{{ animal.sire.get_absolute_url }}">{{ animal.sire }}</a>{% endif %}</dd>
+  <dt>dam</dt><dd>{% if animal.dam.band %}<a href="{{ animal.dam.get_absolute_url }}">{{ animal.dam }}</a>{% endif %}</dd>
 
   <div class="form-group {% if form.notes.errors %}has-error{% endif %}">
         <label for="notes" class="col-sm-2 control-label">Notes</label>

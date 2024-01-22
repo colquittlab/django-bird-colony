@@ -17,11 +17,11 @@ import django_filters as filters
 from django_filters.views import FilterView
 from django_tables2 import RequestConfig
 from django_tables2 import SingleTableMixin, SingleTableView
-from birds.models import Animal, Event, Nest
+from birds.models import Animal, Event, Nest, Mating
 from birds.serializers import AnimalSerializer, AnimalDetailSerializer, EventSerializer
-from birds.forms import ClutchForm, BandingForm, EventForm, AnimalSearchForm, AnimalForm, NestEventForm 
+from birds.forms import ClutchForm, BandingForm, EventForm, AnimalSearchForm, AnimalForm, NestEventForm, MatingEntryForm
 
-from .tables import AnimalTable, NestTable
+from .tables import AnimalTable, NestTable, MatingTable
 
 import ipdb
 
@@ -80,6 +80,16 @@ class NestFilter(filters.FilterSet):
         model = Nest
         fields = []
 
+class MatingFilter(filters.FilterSet):
+    uuid = filters.CharFilter(field_name="uuid", lookup_expr="istartswith")
+    nest = filters.CharFilter(field_name="nest__uuid", lookup_expr="istartswith")
+    sire = filters.CharFilter(field_name="sire__uuid", lookup_expr="istartswith")
+    dam = filters.CharFilter(field_name="dam__uuid", lookup_expr="istartswith")
+
+    class Meta:
+        model = Mating
+        fields = []
+
 class AnimalList(FilterView):
     model = Animal
     filterset_class = AnimalFilter
@@ -109,10 +119,10 @@ class AnimalTableList(SingleTableMixin, FilterView):
         if self.request.GET.get("living", False):
             qs = self.model.living.annotate(acq_date=Min("event__date"))#.order_by("acq_date")
         else:
-        #qs = self.model.objects.annotate(age_days=F("age_days")).order_by("age_days")
+            #qs = self.model.objects.annotate(age_days=F("age_days")).order_by("age_days")
             qs = self.model.objects.all()
         qsf = AnimalFilter(self.request.GET, queryset=qs).qs
-        #qsf = qsf.order_by('-age_days')
+        qsf = qsf.order_by('-age_days')
         return qsf
 
 class EventList(FilterView, generic.list.MultipleObjectMixin):
@@ -124,6 +134,18 @@ class EventList(FilterView, generic.list.MultipleObjectMixin):
     def get_queryset(self):
         qs = Event.objects.filter(**self.kwargs)
         qs = qs.order_by("-date", "created")
+        return qs
+
+class MatingTableList(SingleTableMixin, FilterView):
+    model = Mating
+    filterset_class = MatingFilter
+    table_class = MatingTable
+    template_name = "birds/mating_list2.html"
+    paginate_by = 25
+
+    def get_queryset(self):
+        qs = Mating.objects.filter(**self.kwargs)
+        qs = qs.order_by("nest", "-created")
         return qs
 
 class NestTableList(SingleTableMixin, FilterView):
@@ -295,10 +317,24 @@ class EventEntry(generic.FormView):
         return initial
 
     def form_valid(self, form, **kwargs):        
-        event = form.save()
-      #  return super().form_valid(form)       
+        #event = form.save()
+        event = form.create_event()
         return HttpResponseRedirect(reverse('birds:new_event', args=(event.animal.pk,)))
 
+class MatingEntry(generic.FormView):
+    template_name = "birds/mating_entry.html"
+    form_class = MatingEntryForm
+
+    def get_initial(self):
+        initial = super(MatingEntry, self).get_initial()
+        initial["user"] = self.request.user
+        return initial
+
+    def form_valid(self, form, **kwargs):
+        chick = form.save()
+        return HttpResponseRedirect(reverse('birds:matings'))
+
+    
 class AnimalSearchDisplay(SingleTableMixin, generic.FormView):
     template_name = "birds/animals_search_display.html"
     model = Animal
@@ -366,6 +402,7 @@ class AnimalSearch(SingleTableMixin, generic.FormView):
         if self.request.GET.get("living", False):
             qs = self.model.living.annotate(acq_date=Min("event__date")).order_by("acq_date")
         else:
+            #qs = self.model.objects.annotate(age_days=F("age_days"))#.order_by("age_days")
             qs = self.model.objects.all()
 
         qsf = AnimalFilter(self.request.GET, queryset=qs).qs

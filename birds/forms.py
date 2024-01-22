@@ -5,7 +5,7 @@ import datetime
 from django import forms
 
 from django.contrib.auth.models import User
-from birds.models import Animal, Event, Status, Location, Color, Species, GeneticParent, Parent, Nest, Claim, NestEvent
+from birds.models import Animal, Event, Status, Location, Color, Species, GeneticParent, Parent, Nest, Mating, Claim, NestEvent
 
 
 import ipdb
@@ -23,12 +23,28 @@ class EventForm(forms.ModelForm):
             self.fields['animal'] = forms.ModelChoiceField(queryset=(Animal.objects.filter(uuid__exact=self.initial.get('uuid'))))
         else:
             pass
+
+    def create_event(self):
+#        ipdb.set_trace()
+        data = self.data
+        if Status.objects.get(id=data['status']).name == 'moved':
+            Animal.objects.filter(uuid=data['animal']).update(location=data['location'])
+
+
+        #ipdb.set_trace()
+        evt = Event(animal=Animal.objects.get(uuid=data['animal']),
+                    date=data['date'],
+                    status=Status.objects.get(id=data['status']),
+                    description=data['description'],
+                    location=Location.objects.get(id=data['location']),
+                    entered_by=User.objects.get(id=data['entered_by']))
+        evt.save()
+        return(evt)
     
 class NestEventForm(forms.ModelForm):   
-
     class Meta:
         model = NestEvent 
-        fields = ["nest", "date", "status", "number",  "entered_by"]
+        fields = ["nest", "date", "event", "number",  "entered_by"]
         
 
     def __init__(self, *args, **kwargs):
@@ -36,11 +52,12 @@ class NestEventForm(forms.ModelForm):
 
         
 class BandingForm(forms.Form):
-    acq_status = forms.ModelChoiceField(queryset=Status.objects.filter(count=1))
+    acq_status = forms.ModelChoiceField(queryset=Status.objects.filter(count=1),
+                                        initial=Status.objects.get(name__contains='hatched').id)
     acq_date = forms.DateField()
-    sex = forms.ChoiceField(choices=(('male', 'M'),
-                                     ('female', 'F'),
-                                     ('unknown', 'U')))    
+    sex = forms.ChoiceField(choices=(('M', 'male'),
+                                     ('F', 'female'),
+                                     ('U', 'unknown')))    
     seqvar = forms.ChoiceField(choices=(('yes','Y'),('no','N')),required=False)   
     repeats = forms.ChoiceField(choices=(('yes','Y'),('no','N')),required=False)
     nest = forms.ModelChoiceField(queryset=Nest.objects.all(), required=False)
@@ -52,7 +69,8 @@ class BandingForm(forms.Form):
                                   required=False)
     geneticdam  = forms.ModelChoiceField(queryset=Animal.objects.filter(sex__exact='F'),
                                   required=False)      
-    species = forms.ModelChoiceField(queryset=Species.objects.all(), required=False)
+    species = forms.ModelChoiceField(queryset=Species.objects.all(), required=False,
+                                     initial=Species.objects.get(code__exact='BF').id)
     banding_date = forms.DateField()
     band_color1 = forms.ModelChoiceField(queryset=Color.objects.all(), required=False)
     band_number1 = forms.IntegerField(min_value=1)
@@ -70,11 +88,11 @@ class BandingForm(forms.Form):
         except:
             raise forms.ValidationError("No 'banded' status type - add one in admin")
         if 'acq_status' in data and data['acq_status'].name == "hatched":
-            if data['dam'] is None or data['sire'] is None:
-                raise forms.ValidationError("Parents required for hatched birds")
-            if data['dam'].species != data['sire'].species:
-                raise forms.ValidationError("Parents must be the same species")
-            data['species'] = data['dam'].species
+            if (data['dam'] is None or data['sire'] is None) and data['nest'] is None:
+                raise forms.ValidationError("Parents or Nest required for hatched birds")
+            #if data['dam'].species != data['sire'].species:
+            #    raise forms.ValidationError("Parents must be the same species")
+            #data['species'] = data['dam'].species
         else:
             if data['species'] is None:
                 raise forms.ValidationError("Species required for non-hatch acquisition")
@@ -83,24 +101,43 @@ class BandingForm(forms.Form):
         return data
 
     def create_chick(self):
+        #ipdb.set_trace()
         data = self.cleaned_data
         band_list = map(lambda x : str(x), [data['band_color1'], data['band_number1'], data['band_color2'], data['band_number2']])
         band = band="".join(band_list)
+
+        if data['acq_status'].name == 'hatched':
+            hd = data['acq_date']
+            if data['nest'] and not (data['sire'] or data['dam']):
+                #ipdb.set_trace()
+                nest_obj = Nest.objects.filter(name=data['nest'])[0]
+                sire = nest_obj.current_mating().sire
+                dam = nest_obj.current_mating().dam
+            else:
+                sire = data['sire']
+                dam = data['dam']
+        else:
+            hd = None
+
         chick = Animal(species=data['species'], sex=data['sex'],
+                       hatch_date=hd,
+                       location=data['location'],
                        band_color=data['band_color1'], band_number=data['band_number1'],
-                       band_color2=data['band_color2'], band_number2=data['band_number2'],                       
+                       band_color2=data['band_color2'], band_number2=data['band_number2'],   
                        nest=data['nest'])
         chick.save()
-        if data['sire'] and data['dam']:
-            Parent.objects.create(child=chick, parent=data['sire'])
-            Parent.objects.create(child=chick, parent=data['dam'])
-            chick.save()
+        if data['acq_status'].name == 'hatched':
+            Parent.objects.create(child=chick, parent=sire)
+            Parent.objects.create(child=chick, parent=dam)
+    
+                    
         evt = Event(animal=chick, date=data['acq_date'],
                     status=data['acq_status'],
                     description=data['comments'],
                     location=data['location'],
                     entered_by=data['user'])
         evt.save()
+        
         evt = Event(animal=chick, date=data['banding_date'],
                     status=data['band_status'],
                     location=data['location'],
@@ -127,6 +164,7 @@ class ClutchForm(forms.Form):
             self.cleaned_data['status'] = Status.objects.get(name__startswith="hatch")
         except:
             raise forms.ValidationError("No 'hatch' status type - add one in admin")
+
         #if ('dam' in self.cleaned_data and 'sire' in self.cleaned_data and
         #    self.cleaned_data['dam'].species != self.cleaned_data['sire'].species):
         #    raise forms.ValidationError("Parents must be the same species")
@@ -139,11 +177,13 @@ class ClutchForm(forms.Form):
         for i in range(self.cleaned_data['chicks']):
 
             if self.cleaned_data['nest'] is not None:
-                sire = self.cleaned_data['nest'].sire
-                dam = self.cleaned_data['nest'].dam
-                geneticsire = self.cleaned_data['nest'].sire
-                geneticdam = self.cleaned_data['nest'].dam
-        #   ipdb.set_trace()
+                nest_obj = Nest.objects.filter(name=self.cleaned_data['nest'])[0]
+                sire = nest_obj.current_mating().sire
+                dam = nest_obj.current_mating().dam
+    
+                geneticsire = sire
+                geneticdam = dam
+
             if self.cleaned_data['geneticsire'] is not None:
                 geneticsire = self.cleaned_data['geneticsire']
                 
@@ -186,6 +226,7 @@ class ClutchForm(forms.Form):
             ret['events'].append(evt)
         return ret
 
+
 class AnimalSearchForm(forms.Form):
     acq_status = forms.ModelChoiceField(queryset=Status.objects.filter(count=1), required=False)
     sex = forms.ChoiceField(choices=(('M', 'male'),
@@ -195,7 +236,7 @@ class AnimalSearchForm(forms.Form):
     alive = forms.ChoiceField(choices= ((True, 'yes'),
                                         (False, 'no'),
                                         (None, 'all')), required=False, initial=True)
-    nest = forms.ModelChoiceField(queryset=Nest.objects.all(), required=False)
+    Nest = forms.ModelChoiceField(queryset=Nest.objects.all(), required=False)
     sire = forms.ModelChoiceField(queryset=Animal.objects.filter(sex__exact='M'),
                                   required=False)
     dam  = forms.ModelChoiceField(queryset=Animal.objects.filter(sex__exact='F'),
@@ -275,3 +316,17 @@ class AnimalForm(forms.ModelForm):
     class Meta:
         model = Animal
         fields = ['sex', 'reserved_by', 'notes']
+
+class MatingEntryForm(forms.ModelForm):
+
+    nest = forms.ModelChoiceField(queryset=Nest.objects.all(), required=False)
+    sire = forms.ModelChoiceField(queryset=Animal.objects.filter(sex__exact='M'),
+                                  required=False)
+    dam  = forms.ModelChoiceField(queryset=Animal.objects.filter(sex__exact='F'),
+                                  required=False)
+    entered_by = forms.ModelChoiceField(queryset=User.objects.all())
+    created = forms.DateField(required=True)
+
+    class Meta:
+        model = Mating
+        fields = ['nest', 'sire', 'dam']

@@ -1,0 +1,20 @@
+import datetime
+from birds.models import Animal
+from django.db.models import Max, Min
+
+def update_all_age_days():
+    qs = Animal.objects.all()
+    for animal in qs.iterator():
+        update_age_days(animal)
+        
+def update_age_days(animal):
+    
+    """ Returns days since birthdate if alive, age at death if dead, or None if unknown"""
+    q_birth = animal.event_set.filter(status__name="hatched").aggregate(d=Min("date"))
+    if q_birth["d"] is None:
+        return None
+    if animal.alive:
+        animal.update(age_days = (datetime.date.today() - q_birth["d"]).days)
+    else:
+        q_death = animal.event_set.filter(status__count__lt=0).aggregate(d=Max("date"))
+        animal.update(age_days = (q_death["d"] - q_birth["d"]).days)

@@ -1,6 +1,6 @@
 from django.db.models import Min
 import django_tables2 as tables
-from .models import Animal, Nest
+from .models import Animal, Nest, Mating
 
 class AnimalTable(tables.Table):
 
@@ -15,8 +15,8 @@ class AnimalTable(tables.Table):
     class Meta:
         model = Animal
         template = 'django_tables2/bootstrap.html'
-        sequence = ('band', 'sex', 'age_days', 'hatch_date', 'alive', 'last_location', 'nest', 'reserved_by','song_speed','call_speed','seqvar','repeats','notes', 'edit')
-        fields = ('band', 'sex', 'age_days', 'hatch_date', 'alive', 'last_location', 'nest', 'reserved_by','song_speed','call_speed','seqvar','repeats', 'notes','edit')
+        sequence = ('band', 'sex', 'age_days', 'hatch_date', 'alive', 'location', 'nest', 'reserved_by','song_speed','call_speed','seqvar','repeats','notes', 'edit')
+        fields = ('band', 'sex', 'age_days', 'hatch_date', 'alive', 'location', 'nest', 'reserved_by','song_speed','call_speed','seqvar','repeats', 'notes','edit')
 
 class NestTable(tables.Table):
     edit = tables.TemplateColumn('<a href="/birds/nests/{{record.uuid}}">View</a>')
@@ -24,5 +24,14 @@ class NestTable(tables.Table):
     class Meta:
         model = Nest
         template = 'django_tables2/bootstrap.html'
-        sequence = ('name', 'sire', 'dam', 'created', 'nest_bands', 'uuid', 'edit')
-        fields = ('name', 'sire', 'dam', 'created', 'nest_bands', 'uuid', 'edit')
+        sequence = ('name', 'sire', 'dam', 'created', 'nest_bands1', 'nest_bands2', 'uuid', 'edit')
+        fields = ('name', 'sire', 'dam', 'created', 'nest_bands1', 'nest_bands2', 'uuid', 'edit')
+
+class MatingTable(tables.Table):
+    edit = tables.TemplateColumn('<a href="/birds/matings/{{record.uuid}}">View</a>')
+
+    class Meta:
+        model = Mating
+        template = 'django_tables2/bootstrap.html'
+        sequence = ('nest', 'sire', 'dam', 'created')
+        fields = ('nest', 'sire', 'dam', 'created')

@@ -65,7 +65,7 @@ class Status(models.Model):
         verbose_name_plural = 'status codes'
 
 @python_2_unicode_compatible
-class NestStatus(models.Model):
+class NestEventCodes(models.Model):
     name = models.CharField(max_length=16, unique=True)
     #count = models.SmallIntegerField(default=0, choices=((0, '0'), (-1, '-1'), (1, '+1')),
     #                                 help_text="1: animal acquired; -1: animal lost; 0: no change")
@@ -82,6 +82,7 @@ class NestStatus(models.Model):
 
 @python_2_unicode_compatible
 class Location(models.Model):
+
     name = models.CharField(max_length=45, unique=True)
 
     def __str__(self):
@@ -92,29 +93,60 @@ class Location(models.Model):
 
 
 class Nest(Location):
-
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True)
-    sire = models.ForeignKey('Animal',related_name="nest_sire", on_delete=models.SET_NULL, null=True)
-    dam = models.ForeignKey('Animal', related_name="nest_dam", on_delete=models.SET_NULL, null=True)
     created = models.DateTimeField(auto_now_add=True)
+    #name = models.CharField(max_length=45, unique=True, null=True)
     nest_bands1 =  models.ForeignKey('Color',
                                     related_name='nest_band1',
                                     on_delete=models.SET_NULL,
-                                    blank=True, null=True)
+                                     blank=True, null=True)
     nest_bands2 =  models.ForeignKey('Color',
                                     related_name='nest_band2',
                                     on_delete=models.SET_NULL,
-                                    blank=True, null=True)
+                                     blank=True, null=True)
+
+#    current_mating = models.ForeignKey('Mating',
+#                                       related_name='nest_mating',
+#                                       on_delete=models.SET_NULL,
+#                                       blank=True, null=True)
+
+
+    def current_mating(self):
+        return(Mating.objects.filter(nest=self.uuid).order_by('-uuid')[0])
+        
+    def sire(self):
+        cm = self.current_mating()
+        return(cm.sire)
+
+    def dam(self):
+        cm = self.current_mating()
+        return(cm.dam)
 
     def nest_bands(self):
-        return '%s %s' % (self.nest_bands1.name, self.nest_bands2.name)
+        if not (self.nest_bands1 is None or self.nest_bands2 is None):
+            return '%s %s' % (self.nest_bands1.name, self.nest_bands2.name)
+        else:
+            return('')
 
+    #def __str__(self):
+    #    return self.name
+
+class Mating(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True)
+    sire = models.ForeignKey('Animal',related_name="mating_sire", on_delete=models.SET_NULL, null=True)
+    dam = models.ForeignKey('Animal', related_name="mating_dam", on_delete=models.SET_NULL, null=True)
+    created = models.DateTimeField(auto_now_add=True)
+    nest = models.ForeignKey('Nest', related_name="mating_nest",
+                             on_delete=models.SET_NULL, null=True)
+
+    def mating_string(self):
+        return('%s x %s' % (self.sire.band, self.dam.band))
     #def __str__(self):
     #    return self.name
 
 # class Breeder(models.Model):
 #     animal = models.ForeignKey('Animal')
-#     nest = models.ForeignKey('Nest')
+#     nest = models.ForeignKey('Mating')
 #     established = models.DateTimeField(default = datetime.date.today)
 #     removed = models.DateTimeField(default = datetime.date.today, blank=True,  null=True)
 
@@ -135,7 +167,7 @@ class Age(models.Model):
 
 class ThreshSum(models.Sum):
     """Returns True if Sum is greater than zero"""
-    def convert_value(self, value, expresssion, connection, context):
+    def convert_value(self, value, expresssion, connection):
         if value is None:
             return value
         return value > 0
@@ -147,6 +179,7 @@ class AnimalManager(models.Manager):
 
         ## Subquery use described here: https://docs.djangoproject.com/en/2.0/ref/models/expressions
         newest = Event.objects.filter(animal=OuterRef('uuid')).order_by('-created')
+#        hatch_event = Event.objects.filter(animal=OuterRef('uuid'), status__name="hatched")
         qs = qs.annotate(last_location=Subquery(newest.values('location__name')))
 
         return qs.annotate(alive=ThreshSum("event__status__count"))
@@ -211,6 +244,7 @@ class Animal(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True, editable=False)
     species = models.ForeignKey('Species', on_delete=models.PROTECT)
     sex = models.CharField(max_length=2, choices=SEX_CHOICES)
+    age_days = models.IntegerField(blank=True, null=True)
     song_speed = models.FloatField(max_length=4,null=True, blank=True)
     call_speed = models.FloatField(max_length=4,null=True, blank=True)
     seqvar = models.CharField(max_length=2, choices=BINARY_CHOICES,null=True, blank=True)
@@ -241,6 +275,7 @@ class Animal(models.Model):
     nest = models.ForeignKey('Nest',
                              on_delete=models.PROTECT,
                              null=True,
+                             blank=True,
                              related_name='nests')
 
     reserved_by = models.ForeignKey(settings.AUTH_USER_MODEL,
@@ -267,6 +302,10 @@ class Animal(models.Model):
         else:
             return None
 
+    
+    #def hatch_date(self):
+        
+    
     def name(self):
         #
         return "%s_%s" % (self.species.code, self.band() or self.short_uuid())
@@ -296,16 +335,7 @@ class Animal(models.Model):
         """
         return self.event_set.filter(status__count=1).order_by('date').first()
 
-    def age_days(self):
-        """ Returns days since birthdate if alive, age at death if dead, or None if unknown"""
-        q_birth = self.event_set.filter(status__name="hatched").aggregate(d=models.Min("date"))
-        if q_birth["d"] is None:
-            return None
-        if self.alive:
-            return (datetime.date.today() - q_birth["d"]).days
-        else:
-            q_death = self.event_set.filter(status__count__lt=0).aggregate(d=models.Max("date"))
-            return (q_death["d"] - q_birth["d"]).days
+
 
     # def last_location(self):
     #    """ Returns the location recorded in the most recent event """
@@ -348,7 +378,7 @@ class Event(models.Model):
 class NestEvent(models.Model):
     nest = models.ForeignKey('Nest', on_delete=models.CASCADE)
     date = models.DateField(default=datetime.date.today)
-    status = models.ForeignKey('NestStatus', on_delete=models.PROTECT)
+    event = models.ForeignKey('NestEventCodes', on_delete=models.PROTECT)
     number = models.SmallIntegerField(default=0)
     entered_by = models.ForeignKey(settings.AUTH_USER_MODEL,
                                    on_delete=models.SET(get_sentinel_user))
@@ -374,4 +404,4 @@ class Claim(models.Model):
     latest = LastClaimManager()
     object = models.Manager()
 
-auditlog.register(Nest)
+auditlog.register(Mating)

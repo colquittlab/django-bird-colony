@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %} Colquitt lab : bird colony : add mating {% endblock title%}
+
+{% block scripts %}
+<script src="{% static 'local/js/moment.min.js' %}"></script>
+<script src="{% static 'local/js/bootstrap-datetimepicker.min.js' %}"></script>
+<script type="text/javascript">
+  $(function () {
+  $('#datetimepicker1').datetimepicker({ pickTime: false});
+  $('#datetimepicker2').datetimepicker({ pickTime: false});
+  });
+</script>
+{% endblock %}
+
+{% block content %}
+
+<div class="panel panel-default">
+  <div class="panel-heading"> 
+    <h3 class="panel-title">New mating</h3>
+  </div>
+  <div class="panel-body">
+ {#<!--   <form action="{% url 'birds:animal' animal.uuid %}" class="form-horizontal" method="post" role="form">-->#}
+   <form action="{% url 'birds:new_mating' %}" class="form-horizontal" method="post" role="form">
+
+      {% csrf_token %}
+      <p><strong>Instructions</strong>: This form is for adding a mating to the
+        database. You can use the <a href="{%
+					   url 'admin:birds_mating_add' %}">admin interface</a> to add matings as well edit existing matings.</p>
+
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <div class="form-group {% if form.animal.errors %}has-error{% endif %}">
+        <label for="id_nest" class="col-sm-2 control-label">Nest *</label>
+        <div class="col-sm-5">
+          {% render_field form.nest class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.sire.errors %}has-error{% endif %}">
+        <label for="id_sire" class="col-sm-2 control-label">Sire * </label>
+        <div class="col-sm-5">
+          {% render_field form.sire class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.dam.errors %}has-error{% endif %}">
+        <label for="id_dam" class="col-sm-2 control-label">Dam * </label>
+        <div class="col-sm-5">
+          {% render_field form.dam class+="form-control" %}
+        </div>
+      </div>
+
+
+      <div class="form-group {% if form.created.errors %}has-error{% endif %}">
+        <label for="id_created" class="col-sm-2 control-label">Created * </label>
+        <div class="col-sm-3">
+          <div class="input-group date" id="datetimepicker1">
+            {% render_field form.created class+="form-control" data-format="MM/dd/YYYY" %}
+            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group {% if form.entered_by.errors %}has-error{% endif %}">
+        <label for="id_entered_by" class="col-sm-2 control-label">Entered by * </label>
+        <div class="col-sm-3">
+          {% render_field form.entered_by class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+          <button type="submit" class="btn btn-default">Add mating</button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+{% endblock %}
