@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% load render_table from django_tables2 %}
+{% block title %} Colquitt lab : matings {% endblock %}
+
+{% block content %}
+
+
+<html>
+<head>
+<h2>Eggs</h2>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+</head>
+
+<body>
+  
+  {% render_table table %}
+  
+<h3><a href="{% url 'birds:new_eggs' %}">add new eggs</a></h3>
+<h3><a href="{% url 'admin:birds_eggs_changelist' %}">edit eggs</a><br/></h3>
+</body>
+</html>
+
+
+{% endblock %}

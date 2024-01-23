@@ -1,6 +1,6 @@
 from django.db.models import Min
 import django_tables2 as tables
-from .models import Animal, Nest, Mating
+from .models import Animal, Nest, Mating, Egg
 
 class AnimalTable(tables.Table):
 
@@ -24,14 +24,23 @@ class NestTable(tables.Table):
     class Meta:
         model = Nest
         template = 'django_tables2/bootstrap.html'
-        sequence = ('name', 'sire', 'dam', 'created', 'nest_bands1', 'nest_bands2', 'uuid', 'edit')
-        fields = ('name', 'sire', 'dam', 'created', 'nest_bands1', 'nest_bands2', 'uuid', 'edit')
+        sequence = ('name', 'sire', 'dam', 'created', 'nest_bands1', 'nest_bands2', 'current_egg_number', 'current_hatchling_number', 'edit')
+        fields = ('name', 'sire', 'dam', 'created', 'nest_bands1', 'nest_bands2', 'current_egg_number', 'current_hatchling_number', 'edit')
 
 class MatingTable(tables.Table):
     edit = tables.TemplateColumn('<a href="/birds/matings/{{record.uuid}}">View</a>')
 
     class Meta:
         model = Mating
+        template = 'django_tables2/bootstrap.html'
+        sequence = ('nest', 'sire', 'dam', 'created')
+        fields = ('nest', 'sire', 'dam', 'created')
+
+class EggTable(tables.Table):
+    #edit = tables.TemplateColumn('<a href="/birds/matings/{{record.uuid}}">View</a>')
+
+    class Meta:
+        model = Egg
         template = 'django_tables2/bootstrap.html'
         sequence = ('nest', 'sire', 'dam', 'created')
         fields = ('nest', 'sire', 'dam', 'created')

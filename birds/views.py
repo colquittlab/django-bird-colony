@@ -17,11 +17,11 @@ import django_filters as filters
 from django_filters.views import FilterView
 from django_tables2 import RequestConfig
 from django_tables2 import SingleTableMixin, SingleTableView
-from birds.models import Animal, Event, Nest, Mating
+from birds.models import Animal, Event, Nest, Mating, Egg
 from birds.serializers import AnimalSerializer, AnimalDetailSerializer, EventSerializer
-from birds.forms import ClutchForm, BandingForm, EventForm, AnimalSearchForm, AnimalForm, NestEventForm, MatingEntryForm
+from birds.forms import ClutchForm, BandingForm, EventForm, AnimalSearchForm, AnimalForm, NestEventForm, MatingEntryForm, EggForm
 
-from .tables import AnimalTable, NestTable, MatingTable
+from .tables import AnimalTable, NestTable, MatingTable, EggTable
 
 import ipdb
 
@@ -78,6 +78,16 @@ class NestFilter(filters.FilterSet):
 
     class Meta:
         model = Nest
+        fields = []
+
+class EggFilter(filters.FilterSet):
+    uuid = filters.CharFilter(field_name="uuid", lookup_expr="istartswith")
+    name = filters.CharFilter(field_name="name", lookup_expr="istartswith")
+    sire = filters.CharFilter(field_name="sire__uuid", lookup_expr="istartswith")
+    dam = filters.CharFilter(field_name="dam__uuid", lookup_expr="istartswith")
+
+    class Meta:
+        model = Egg
         fields = []
 
 class MatingFilter(filters.FilterSet):
@@ -141,6 +151,18 @@ class MatingTableList(SingleTableMixin, FilterView):
     filterset_class = MatingFilter
     table_class = MatingTable
     template_name = "birds/mating_list2.html"
+    paginate_by = 25
+
+    def get_queryset(self):
+        qs = Mating.objects.filter(**self.kwargs)
+        qs = qs.order_by("nest", "-created")
+        return qs
+
+class EggTableList(SingleTableMixin, FilterView):
+    model = Egg
+    filterset_class = EggFilter
+    table_class = EggTable
+    template_name = "birds/egg_list.html"
     paginate_by = 25
 
     def get_queryset(self):
@@ -250,6 +272,48 @@ class ClutchEntry(SingleTableMixin, generic.FormView):
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
         context = super(ClutchEntry, self).get_context_data(**kwargs)
+
+        if len(self.request.POST) == 0:
+            table = None
+        else:
+            table = self.get_table(**self.get_table_kwargs())
+
+        context[self.get_context_table_name(table)] = table
+        return context
+
+class EggEntry(SingleTableMixin, generic.FormView):
+    template_name = "birds/eggs_entry.html"
+    form_class = EggForm
+    model = Egg
+    table_class = EggTable
+    context_table_name = 'results'
+
+    def get_initial(self):
+        initial = super(EggEntry, self).get_initial()
+        initial["user"] = self.request.user
+        initial["results"] = None
+
+        return initial
+
+    def form_valid(self, form, **kwargs):
+        """ For valid entries, render a page with a list clutch """
+        objs = form.create_eggs()
+        uuids = [a.uuid for a in objs['eggs']]
+        qs = self.model.objects.filter(uuid__in = uuids)
+        table = EggTable(qs)
+        return render(self.request, 'birds/eggs_entry.html',
+                      {'form' : form,
+                       'results' : table})
+
+    def get_table_data(self):
+        qs = self.model.objects.all()
+        post = self.request.POST
+        qsf = EggFilter(post, queryset=qs).qs
+        return qsf
+
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super(EggEntry, self).get_context_data(**kwargs)
 
         if len(self.request.POST) == 0:
             table = None

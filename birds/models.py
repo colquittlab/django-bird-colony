@@ -13,7 +13,9 @@ from django.urls import reverse
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db.models import OuterRef, Subquery
+from django.db.models import OuterRef, Subquery, Sum, Count, Func, F, Q
+from django.db.models.functions import Coalesce
+from sql_util.utils import SubqueryCount
 from auditlog.registry import auditlog
 
 def get_sentinel_user():
@@ -67,10 +69,6 @@ class Status(models.Model):
 @python_2_unicode_compatible
 class NestEventCodes(models.Model):
     name = models.CharField(max_length=16, unique=True)
-    #count = models.SmallIntegerField(default=0, choices=((0, '0'), (-1, '-1'), (1, '+1')),
-    #                                 help_text="1: animal acquired; -1: animal lost; 0: no change")
-    #category = models.CharField(max_length=2, choices=(('B','B'),('C','C'),('D','D'),('E','E')),
-    #                            blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
     def __str__(self):
@@ -79,6 +77,20 @@ class NestEventCodes(models.Model):
     class Meta:
         ordering = ['name']
         verbose_name_plural = 'nest status codes'
+
+class EggEventCode(models.Model):
+    name = models.CharField(max_length=16, unique=True)
+    description = models.TextField(blank=True, null=True)
+    count = models.SmallIntegerField(default=0, choices=((0, '0'), (-1, '-1'), (1, '+1')),
+                                     help_text="1: egg laid; -1: egg removed; 0: no change")
+    category = models.CharField(max_length=2, choices=(('B','B'),('C','C'),('D','D'),('E','E')),
+                                blank=True, null=True)
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+        verbose_name_plural = 'egg event codes'
 
 @python_2_unicode_compatible
 class Location(models.Model):
@@ -92,10 +104,39 @@ class Location(models.Model):
         ordering = ['name']
 
 
+class SQCount(Subquery):
+    template = "(SELECT count(*) FROM (%(subquery)s) _count)"
+    output_field = models.IntegerField()
+    
+class NestManager(models.Manager):
+    def get_queryset(self):
+        qs = super(NestManager, self).get_queryset()
+
+        ## Subquery use described here: https://docs.djangoproject.com/en/2.0/ref/models/expressions
+        eggs = Egg.objects.filter(nest=OuterRef('uuid')).values('nest')
+        total_eggs = eggs.annotate(total=Sum("eggevent__event__count")).values('total')
+
+
+        ## Count birds in current nest, subtract two, to give hatchling number -- Can't figure this out
+        ## Just made def in Nest model
+        ## https://stackoverflow.com/questions/52027676/using-subquery-to-annotate-a-count
+        # fledglings = Animal.objects \
+        #           .filter(location__name=OuterRef('name')) \
+        #           .order_by() \
+        #           .values('location') \
+        #           .annotate(count = Count('pk')) \
+        #           .values('count')
+                            
+        #.annotate(total=Func(F('uuid'), function='Count')) \
+        #fledglings = animals.annotate(total=Count("location")).values('total')
+        #fledglings = animals.count()
+        return qs.annotate(current_egg_number=Subquery(total_eggs))#,
+                           #current_fledgling_number=Coalesce(Subquery(fledglings, output_field=models.IntegerField()), 0))
+    
 class Nest(Location):
+
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True)
     created = models.DateTimeField(auto_now_add=True)
-    #name = models.CharField(max_length=45, unique=True, null=True)
     nest_bands1 =  models.ForeignKey('Color',
                                     related_name='nest_band1',
                                     on_delete=models.SET_NULL,
@@ -105,11 +146,7 @@ class Nest(Location):
                                     on_delete=models.SET_NULL,
                                      blank=True, null=True)
 
-#    current_mating = models.ForeignKey('Mating',
-#                                       related_name='nest_mating',
-#                                       on_delete=models.SET_NULL,
-#                                       blank=True, null=True)
-
+    objects = NestManager()
 
     def current_mating(self):
         return(Mating.objects.filter(nest=self.uuid).order_by('-uuid')[0])
@@ -128,8 +165,15 @@ class Nest(Location):
         else:
             return('')
 
-    #def __str__(self):
-    #    return self.name
+    def current_hatchling_number(self):
+        
+        hatchlings = Animal.objects \
+                  .filter(Q(location__name=self.name)) \
+                  .filter(~Q(uuid=self.sire().uuid)) \
+                  .filter(~Q(uuid=self.dam().uuid)) \
+                  .count()
+        return(hatchlings)
+
 
 class Mating(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True)
@@ -179,10 +223,11 @@ class AnimalManager(models.Manager):
 
         ## Subquery use described here: https://docs.djangoproject.com/en/2.0/ref/models/expressions
         newest = Event.objects.filter(animal=OuterRef('uuid')).order_by('-created')
-#        hatch_event = Event.objects.filter(animal=OuterRef('uuid'), status__name="hatched")
         qs = qs.annotate(last_location=Subquery(newest.values('location__name')))
 
         return qs.annotate(alive=ThreshSum("event__status__count"))
+
+
 
 
 class LivingAnimalManager(AnimalManager):
@@ -206,6 +251,13 @@ class LastClaimManager(models.Manager):
 #    """ Filters queryset so that only the most recent location is returned """
 #    def get_queryset(self):
 
+class ParentEgg(models.Model):
+    egg = models.ForeignKey('Egg', related_name="+", on_delete=models.CASCADE)
+    parent = models.ForeignKey('Animal', related_name="+", on_delete=models.CASCADE, blank=True)
+
+    def __str__(self):
+        return "%s -> %s" % (self.parent, self.child)
+    
 @python_2_unicode_compatible
 class Parent(models.Model):
     child = models.ForeignKey('Animal', related_name="+", on_delete=models.CASCADE)
@@ -224,6 +276,36 @@ class GeneticParent(models.Model):
 
 
 
+class Egg(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True, editable=False)
+    species = models.ForeignKey('Species', on_delete=models.PROTECT)
+    parents = models.ManyToManyField('Animal',
+                                     related_name='egg_children',
+                                     through='ParentEgg',
+                                     through_fields=('egg', 'parent'))
+    sire = models.ForeignKey('Animal',
+                                 on_delete=models.SET_NULL,
+                                 null=True, blank=True,
+                                 related_name='egg_sire')
+
+    dam = models.ForeignKey('Animal',
+                                 on_delete=models.SET_NULL,
+                                 null=True, blank=True,
+                                 related_name='egg_dam')
+    nest = models.ForeignKey('Nest',
+                             on_delete=models.PROTECT,
+                             null=True,
+                             blank=True,
+                             related_name='egg_nest')
+
+    reserved_by = models.ForeignKey(settings.AUTH_USER_MODEL,
+                                    blank=True, null=True,
+                                    on_delete=models.SET(get_sentinel_user),
+                                    help_text="mark a bird as reserved for a specific user")
+    lay_date = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(null=True, blank=True)
+    
 @python_2_unicode_compatible
 class Animal(models.Model):
     MALE = 'M'
@@ -266,6 +348,17 @@ class Animal(models.Model):
                                      related_name='children',
                                      through='Parent',
                                      through_fields=('child', 'parent'))
+
+
+    sire = models.ForeignKey('Animal',
+                                 on_delete=models.SET_NULL,
+                                 null=True, blank=True,
+                                 related_name='egg_sire')
+
+    dam = models.ForeignKey('Animal',
+                                 on_delete=models.SET_NULL,
+                                 null=True, blank=True,
+                                 related_name='egg_dam')
 
     location = models.ForeignKey('Location',
                                  on_delete=models.SET_NULL,
@@ -348,6 +441,8 @@ class Animal(models.Model):
         ordering = ['band_color', 'band_number']
 
 
+
+    
 @python_2_unicode_compatible
 class Event(models.Model):
     animal = models.ForeignKey('Animal', on_delete=models.CASCADE)
@@ -369,6 +464,28 @@ class Event(models.Model):
     def event_date(self):
         """ Description of event and date """
         return "%s on %s" % (self.status, self.date)
+
+    class Meta:
+        ordering = ['-date']
+
+class EggEvent(models.Model):
+    egg = models.ForeignKey('Egg', on_delete=models.CASCADE)
+    date = models.DateField(default=datetime.date.today)
+    event = models.ForeignKey('EggEventCode', on_delete=models.PROTECT)
+    #location = models.ForeignKey('Location', blank=True, null=True, on_delete=models.SET_NULL)
+    description = models.TextField(blank=True)
+    entered_by = models.ForeignKey(settings.AUTH_USER_MODEL,
+                                   on_delete=models.SET(get_sentinel_user))
+    created = models.DateTimeField(auto_now_add=True)
+    objects = models.Manager()
+    latest = LastEventManager()
+
+    def __str__(self):
+        return "%s: %s on %s" % (self.egg, self.event, self.date)
+
+    def event_date(self):
+        """ Description of event and date """
+        return "%s on %s" % (self.event, self.date)
 
     class Meta:
         ordering = ['-date']

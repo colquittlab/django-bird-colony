@@ -5,7 +5,7 @@ import datetime
 from django import forms
 
 from django.contrib.auth.models import User
-from birds.models import Animal, Event, Status, Location, Color, Species, GeneticParent, Parent, Nest, Mating, Claim, NestEvent
+from birds.models import Animal, Event, Status, Location, Color, Species, GeneticParent, Parent, Nest, Mating, Claim, NestEvent, Egg, EggEvent, EggEventCode, ParentEgg
 
 
 import ipdb
@@ -226,6 +226,72 @@ class ClutchForm(forms.Form):
             ret['events'].append(evt)
         return ret
 
+class EggForm(forms.Form):
+    sire = forms.ModelChoiceField(queryset=Animal.objects.filter(sex__exact='M'), required=False)
+    dam  = forms.ModelChoiceField(queryset=Animal.objects.filter(sex__exact='F'), required=False)
+    #geneticsire = forms.ModelChoiceField(queryset=Animal.objects.filter(sex__exact='M'), required=False)
+    #geneticdam  = forms.ModelChoiceField(queryset=Animal.objects.filter(sex__exact='F'), required=False)      
+    nest = forms.ModelChoiceField(queryset=Nest.objects.all())
+    egg_number = forms.IntegerField(min_value=1)
+    lay_date = forms.DateField(initial=datetime.date.today)
+    comments = forms.CharField(widget=forms.Textarea, required=False)
+    user = forms.ModelChoiceField(queryset=User.objects.all())
+
+    def clean(self):
+        super(EggForm, self).clean()
+        try:
+            #ipdb.set_trace()
+            self.cleaned_data['egg_event_code'] = EggEventCode.objects.get(name__startswith="laid")
+        except:
+            raise forms.ValidationError("No 'laid' status type - add one in admin")
+
+        #if ('dam' in self.cleaned_data and 'sire' in self.cleaned_data and
+        #    self.cleaned_data['dam'].species != self.cleaned_data['sire'].species):
+        #    raise forms.ValidationError("Parents must be the same species")
+        return self.cleaned_data
+
+
+    def create_eggs(self):
+        ret = {'eggs': [], 'events': []}
+        
+        for i in range(self.cleaned_data['egg_number']):
+
+            if self.cleaned_data['nest'] is not None:
+
+                nest_obj = Nest.objects.filter(name=self.cleaned_data['nest'])[0]
+                sire = nest_obj.current_mating().sire
+                dam = nest_obj.current_mating().dam
+                   
+            if self.cleaned_data['sire'] is not None:
+                sire = self.cleaned_data['sire']
+
+            if self.cleaned_data['dam'] is not None:
+                sire = self.cleaned_data['dam']
+
+            if sire is None:
+                species = Species.objects.get(code="BF")
+            else:
+                species = sire.species
+
+            egg = Egg(species=species,
+                      sire = sire,
+                      dam = dam,
+                      nest=self.cleaned_data['nest'],
+                      lay_date=self.cleaned_data['lay_date'])
+            egg.save()
+            ParentEgg.objects.create(egg=egg, parent=sire)
+            ParentEgg.objects.create(egg=egg, parent=dam)
+
+            egg.save()
+            evt = EggEvent(egg=egg,
+                        date=self.cleaned_data['lay_date'],
+                        event=self.cleaned_data['egg_event_code'],
+                        description=self.cleaned_data['comments'],
+                        entered_by=self.cleaned_data['user'])
+            evt.save()
+            ret['eggs'].append(egg)
+            ret['events'].append(evt)
+        return ret
 
 class AnimalSearchForm(forms.Form):
     acq_status = forms.ModelChoiceField(queryset=Status.objects.filter(count=1), required=False)

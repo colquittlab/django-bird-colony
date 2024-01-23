@@ -2,7 +2,7 @@
 import datetime
 
 from django.contrib import admin
-from birds.models import Species, Color, Location, Animal, Event, Status, Age, Parent, Nest, Mating, NestEvent
+from birds.models import Species, Color, Location, Animal, Event, Status, Age, Parent, Nest, Mating, NestEvent, EggEventCode, Egg, EggEvent
 from django.db import models
 
 
@@ -48,9 +48,9 @@ class AnimalInline(admin.TabularInline):
 class AnimalAdmin(admin.ModelAdmin):
  
     fields = ('sex', 'nest', 'band_color', 'band_number', 'band_color2', 'band_number2', 'location', 'hatch_date', 'song_speed','call_speed','seqvar','repeats', 'reserved_by')    
-    list_display = ('name', 'band', 'age_days', 'species', 'nest', 'uuid', 'sex', 'song_speed','call_speed','seqvar','repeats', 'reserved_by')
-    list_filter = ('sex', 'nest', 'band_color', 'reserved_by')
-    search_fields = ('band_color__name', '=band_number', 'nest__name')
+    list_display = ('name', 'band', 'age_days', 'species', 'nest', 'uuid', 'sex', 'location', 'reserved_by')
+    list_filter = ('sex', 'nest', 'location', 'band_color', 'reserved_by')
+    search_fields = ('band_color__name', '=band_number', 'nest__name', 'location__name')
     inlines = (ParentInline,EventInline)
 
     def age_days(self, obj):
@@ -71,6 +71,13 @@ class EventAdmin(admin.ModelAdmin):
     list_filter = ('animal', 'entered_by', 'status', 'location')
     search_fields = ('description',)
 
+class EggEventAdmin(admin.ModelAdmin):
+    date_hierarchy = 'date'
+    fields = ('egg', 'event', 'date', 'entered_by')
+#    list_display = (, 'date', 'status', 'description')
+#    list_filter = ('animal', 'entered_by', 'status', 'location')
+    search_fields = ('event',)
+
 class MatingAdmin(admin.ModelAdmin):
     date_hierarchy = 'created'
     fields = ( 'sire', 'dam', 'nest', 'uuid')
@@ -78,10 +85,24 @@ class MatingAdmin(admin.ModelAdmin):
     search_fields = ( 'nest',  'sire', 'dam')
     list_filter = ('nest',)
 
+class EggAdmin(admin.ModelAdmin):
+    date_hierarchy = 'created'
+    fields = ( 'nest', 'sire', 'dam')
+    list_display = ( 'nest', 'sire', 'dam', 'created')
+    search_fields = ( 'nest',)
+    list_filter = ('nest',)
 
-    #inlines = (AnimalInline,MatingEventInline)
+class LocationAdmin(admin.ModelAdmin):
+
+    fields = ('name', 'id')
+    list_display = ('name',  'id')
+    search_fields = ('name',)
+    list_filter = ('name', 'id')
 
 
+    #inlines = (AnimalInline,NestEventInline)
+
+    
 class NestAdmin(admin.ModelAdmin):
     date_hierarchy = 'created'
     fields = ('name', 'nest_bands1', 'nest_bands2',
@@ -106,16 +127,23 @@ class NestEventAdmin(admin.ModelAdmin):
 class StatusAdmin(admin.ModelAdmin):
     list_display = ('name', 'count')
 
+class EggEventCodeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'count')
+
 class MatingStatusAdmin(admin.ModelAdmin):
     list_display = ('name', 'description')
 
 admin.site.register(Animal, AnimalAdmin)
 admin.site.register(Event, EventAdmin)
 admin.site.register(Nest, NestAdmin)
+admin.site.register(Location, LocationAdmin)
 admin.site.register(Mating, MatingAdmin)
 admin.site.register(NestEvent, NestEventAdmin)
 admin.site.register(Status, StatusAdmin)
+admin.site.register(Egg, EggAdmin)
+admin.site.register(EggEventCode, EggEventCodeAdmin)
+admin.site.register(EggEvent, EggEventAdmin)
 #admin.site.register(MatingStatus, MatingStatusAdmin)
 
-for model in (Species, Color, Location, Age):
+for model in (Species, Color, Age):
     admin.site.register(model)
