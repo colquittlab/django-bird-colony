@@ -87,8 +87,8 @@ class MatingAdmin(admin.ModelAdmin):
 
 class EggAdmin(admin.ModelAdmin):
     date_hierarchy = 'created'
-    fields = ( 'nest', 'sire', 'dam')
-    list_display = ( 'nest', 'sire', 'dam', 'created')
+    fields = ( 'nest', 'sire', 'lay_date', 'dam')
+    list_display = ( 'nest', 'sire', 'dam', 'lay_date',  'created')
     search_fields = ( 'nest',)
     list_filter = ('nest',)
 

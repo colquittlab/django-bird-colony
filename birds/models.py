@@ -260,7 +260,7 @@ class ParentEgg(models.Model):
     parent = models.ForeignKey('Animal', related_name="+", on_delete=models.CASCADE, blank=True)
 
     def __str__(self):
-        return "%s -> %s" % (self.parent, self.child)
+        return "%s -> %s" % (self.parent, self.egg)
     
 @python_2_unicode_compatible
 class Parent(models.Model):
@@ -306,7 +306,7 @@ class Egg(models.Model):
                                     blank=True, null=True,
                                     on_delete=models.SET(get_sentinel_user),
                                     help_text="mark a bird as reserved for a specific user")
-    lay_date = models.DateTimeField(auto_now_add=True)
+    lay_date = models.DateField(default=None, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(null=True, blank=True)
     
