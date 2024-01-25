@@ -34,11 +34,12 @@ urlpatterns = [
     re_path(r'^nests/$', views.NestTableList.as_view(), name='nests'),
     re_path(r'^nests/(?P<uuid>[a-f0-9\-]{36})/$', views.NestView.as_view(), name='nest'),
     re_path(r'^nests/(?P<uuid>[a-f0-9\-]{36})/events/new/$', login_required(views.NestEventEntry.as_view()), name='nest_event'),
-       re_path(r'^nests/events/new/$', login_required(views.NestEventEntry.as_view()), name='nest_event'),
+    re_path(r'^nests/events/new/$', login_required(views.NestEventEntry.as_view()), name='nest_event'),
 
     # Eggs
     re_path(r'^eggs/$', views.EggTableList.as_view(), name='eggs'),
-        re_path(r'^eggs/new/$', login_required(views.EggEntry.as_view()), name='new_eggs'),
+    re_path(r'^eggs/new/$', login_required(views.EggEntry.as_view()), name='new_eggs'),
+    re_path(r'^eggs/(?P<uuid>[a-f0-9\-]{36})/$', views.EggView.as_view(), name='egg'),
     
     # Matings
     re_path(r'^matings/$', views.MatingTableList.as_view(), name='matings'),

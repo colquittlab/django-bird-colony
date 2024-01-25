@@ -1,1 +1,6 @@
 birds
+build
+dist
+node_modules
+scripts
+static

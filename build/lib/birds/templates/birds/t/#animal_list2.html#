@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% load render_table from django_tables2 %}
+{% block title %} brainard-lab : animals {% endblock %}
+
+{% block content %}
+<h2>Birds</h2>
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+
+{% render_table table %}
+
+<p><a href="{% url 'birds:new_animal' %}">add new animal</a></p>
+{% endblock %}

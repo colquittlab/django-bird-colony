@@ -166,7 +166,7 @@ class EggTableList(SingleTableMixin, FilterView):
     paginate_by = 25
 
     def get_queryset(self):
-        qs = Mating.objects.filter(**self.kwargs)
+        qs = Egg.objects.filter(**self.kwargs)
         qs = qs.order_by("nest", "-created")
         return qs
 
@@ -224,18 +224,50 @@ class NestView(generic.DetailView):
     slug_field = 'uuid'
     slug_url_kwarg = 'uuid'
 
-    def get_context_data(self, **kwargs):
-        context = super(NestView, self).get_context_data(**kwargs)
-        animal = context['nest']
-        #context['nest_list'] = animal.children.all()
-        #context['nest_list'] = animal.event_set.all()
-        return context
+    def get_initial(self):
+        initial = super(NestView, self).get_initial()
 
-    def children(self):
-        return Animal.filter(nest__name=self.object.name)
+        ## Set reserved_by initial to current claimant
+        current_nest = self.get_object()
+        initial['reserved_by'] = current_nest.reserved_by
+        return initial
+    
+    #def get_context_data(self, **kwargs):
+    #    context = super(NestView, self).get_context_data(**kwargs)
+    #    nest = context['nest']
+    #    return context
 
+    def form_valid(self, form, **kwargs):
+        #claims = form.update_claims(self.get_object())
+        #uuids = [a.uuid for a in objs['chicks']]
+        #qs = self.model.objects.filter(uuid__in = uuids)
+        #table = ClaimTable(qs)
+        return super().form_valid(form)
+    
+    #def children(self):
+    #    return Animal.filter(nest__name=self.object.name)
+
+    #def claim_list(self):
+    #    claims = self.object.claim_set.all().order_by("-date")
+    #    return claims
+    
     def event_list(self):
         events = self.object.nestevent_set.all().order_by("-date")
+        return events
+
+class EggView(generic.DetailView):
+    model = Egg
+    template_name = 'birds/egg.html'
+    slug_field = 'uuid'
+    slug_url_kwarg = 'uuid'
+
+    def get_context_data(self, **kwargs):
+        context = super(EggView, self).get_context_data(**kwargs)
+        #animal = context['nest']
+        return context
+
+    def event_list(self):
+        events = self.object.eggevent_set.all().order_by("-date")
         return events
 
 

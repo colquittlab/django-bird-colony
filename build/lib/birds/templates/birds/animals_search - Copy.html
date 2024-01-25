@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load widget_tweaks %}
+{% load render_table from django_tables2 %}
+{% load bootstrap3 %}
+{% block title %} brainard-lab : bird colony : add bird {% endblock title%}
+
+<link href="{% static "datepicker/css/bootstrap-datetimepicker.min.css" %}" rel="stylesheet type='text/css'">
+<!-- <link href="{% static 'admin/css/fonts.css' %}" rel="stylesheet">  -->
+
+{% block scripts %}
+<script src="{% static 'datepicker/js/moment.min.js' %}"></script> 
+<script src="{% static 'datepicker/js/bootstrap-datetimepicker.min.js' %}"></script>
+<script type="text/javascript">
+  $(function () {
+  $('#datetimepicker1').datetimepicker({ pickTime: false});
+  $('#datetimepicker2').datetimepicker({ pickTime: false});
+  });
+</script>
+{% endblock %}
+{% block content %}
+
+{% include "birds/home.html" %} 
+<!--
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Bird search</h3>
+  </div>
+  <div class="panel-body">
+    <!-- <form action="{% url 'birds:animals_search' %}" class="form-horizontal" method="post" role="form"> -->
+    <form action="{% url 'birds:animals_search' %}" class="form-horizontal" method="get" role="form">
+      {% csrf_token %}
+      <p><strong>All fields are optional</strong></p>
+
+
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <div class="form-group {% if form.acq_status.errors %}has-error{% endif %}">
+        <label for="id_acq_status" class="col-sm-2 control-label">Acquired method</label>
+        <div class="col-sm-5">
+          {% render_field form.acq_status class+="form-control" %}
+        </div>
+      </div>
+<!--
+      <div class="form-group {% if form.species.errors %}has-error{% endif %}">
+        <label for="id_species" class="col-sm-2 control-label">Species</label>
+        <div class="col-sm-5">
+          {% render_field form.species class+="form-control" %}
+        </div>
+      </div>-->
+
+      <div class="form-group {% if form.sex.errors %}has-error{% endif %}">
+        <label for="id_sex" class="col-sm-2 control-label">Sex</label>
+        <div class="col-sm-5">
+          {% render_field form.sex class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.nest.errors %}has-error{% endif %}">
+        <label for="id_nest"url(r'^nests/$', views.NestList.as_view(), name='nests'), class="col-sm-2 control-label">Nest</label>
+        <div class="col-sm-5">
+          {% render_field form.nest class+="form-control" %}
+        </div>
+      </div> 
+
+<!--      <div class="form-group {% if form.sire.errors %}has-error{% endif %}">
+        <label for="id_sire" class="col-sm-2 control-label">Sire</label>
+        <div class="col-sm-5">
+          {% render_field form.sire class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.dam.errors %}has-error{% endif %}">
+        <label for="id_dam" class="col-sm-2 control-label">Dam</label>
+        <div class="col-sm-5">
+          {% render_field form.dam class+="form-control" %}
+        </div>
+      </div>
+
+      <!-- <div class="form-group {% if form.banding_date.errors %}has-error{% endif %}"> -->
+      <!--   <label for="id_hatch_date" class="col-sm-2 control-label">Hatch date</label> -->
+      <!--   <div class="col-sm-3"> -->
+      <!--     <div class="input-group date" id="datetimepicker2"> -->
+      <!--       {% render_field form.hatch_date class+="form-control" data-format="MM/dd/YYYY" %} -->
+      <!--       <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span> -->
+      <!--       </span> -->
+      <!--     </div> -->
+      <!--   </div> -->
+      <!-- </div> -->
+
+      <div class="form-group {% if form.alive.errors %}has-error{% endif %}">
+        <label for="id_location" class="col-sm-2 control-label">Alive</label>
+        <div class="col-sm-5">
+          {% render_field form.alive class+="form-control" %}
+        </div>
+      </div>
+
+      <!-- <div class="form-group {% if form.colorband.errors %}has-error{% endif %}"> -->
+      <!--   <label for="id_colorband" class="col-sm-2 control-label">Band</label> -->
+      <!--   <div class="col-sm-3"> -->
+      <!--     {% render_field form.colorband class+="form-control" %} -->
+      <!--   </div> -->
+      <!-- </div> -->
+
+      <div class="form-group {% if form.color1.errors %}has-error{% endif %}">
+        <label for="id_color1" class="col-sm-2 control-label">Color1</label>
+        <div class="col-sm-3">
+          {% render_field form.color1 class+="form-control" %}
+        </div>
+      </div>
+      <div class="form-group {% if form.band1.errors %}has-error{% endif %}">
+        <label for="id_band1" class="col-sm-2 control-label">Band1</label>
+        <div class="col-sm-3">
+          {% render_field form.band1 class+="form-control" %}
+        </div>
+      </div>
+      <div class="form-group {% if form.color2.errors %}has-error{% endif %}">
+        <label for="id_color2" class="col-sm-2 control-label">Color2</label>
+        <div class="col-sm-3">
+          {% render_field form.color2 class+="form-control" %}
+        </div>
+      </div>
+      <div class="form-group {% if form.band2.errors %}has-error{% endif %}">
+        <label for="id_band2" class="col-sm-2 control-label">Band2</label>
+        <div class="col-sm-3">
+          {% render_field form.band2 class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.song_speed.errors %}has-error{% endif %}">
+        <label for="song_speed_lessthan" class="col-sm-2 control-label">Song Speed &lt; </label>
+        <div class="col-sm-5">
+          {% render_field form.song_speed_lessthan class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.song_speed.errors %}has-error{% endif %}">
+        <label for="song_speed_greaterthan" class="col-sm-2 control-label">Song Speed &gt; </label>
+        <div class="col-sm-5">
+          {% render_field form.song_speed_greaterthan class+="form-control" %}
+        </div>
+      </div>	  
+
+      <div class="form-group {% if form.song_speed.errors %}has-error{% endif %}">
+        <label for="call_speed_lessthan" class="col-sm-2 control-label">Call Speed &lt;</label>
+        <div class="col-sm-5">
+          {% render_field form.call_speed_lessthan class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.song_speed.errors %}has-error{% endif %}">
+        <label for="call_speed_greaterthan" class="col-sm-2 control-label">Call Speed &gt; </label>
+        <div class="col-sm-5">
+          {% render_field form.call_speed_greaterthan class+="form-control" %}
+        </div>
+      </div>	  
+      <div class="form-group {% if form.seqvar.errors %}has-error{% endif %}">
+        <label for="seqvar" class="col-sm-2 control-label">Sequence Variability?</label>
+        <div class="col-sm-5">
+          {% render_field form.seqvar class+="form-control" %}
+        </div>
+      </div>	
+      <div class="form-group {% if form.repeats.errors %}has-error{% endif %}">
+        <label for="repeats" class="col-sm-2 control-label">Repeats?</label>
+        <div class="col-sm-5">
+          {% render_field form.repeats class+="form-control" %}
+        </div>
+      </div>		  
+
+      <div class="form-group {% if form.location.errors %}has-error{% endif %}">
+        <label for="id_location" class="col-sm-2 control-label">Location</label>
+        <div class="col-sm-5">
+          {% render_field form.location class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.user.errors %}has-error{% endif %}">
+        <label for="id_reserved_by" class="col-sm-2 control-label">Reserved by</label>
+        <div class="col-sm-3">
+          {% render_field form.reserved_by class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+          <button type="submit" class="btn btn-default">Search</button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+
+<h2>Birds</h2>
+{% if filter %}
+    <form action="" method="get" class="form form-inline">
+        {% bootstrap_form filter.form layout='inline' %}
+        {% bootstrap_button 'filter' %}
+    </form>
+{% endif %}
+
+{% render_table results %}
+
+{% endblock %}

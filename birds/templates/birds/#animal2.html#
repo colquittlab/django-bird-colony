@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %} Colquitt lab : bird : {{ animal.name }} {% endblock %}
+
+{% load widget_tweaks %}
+
+{% block breadcrumbs %}
+      {{ block.super }}
+      <a href="{% url 'birds:animals' %}">Back to bird list</a>
+{% endblock %}
+
+{% block content %}
+<h2>{{ animal.name }}</h2>
+
+<hr>
+<dl class="dl-horizontal">
+<!-- <form action="{% url 'birds:animal' animal.uuid %}" class="form-horizontal" method="post" role="form"> -->
+<form action="" class="form-horizontal" method="post" role="form">
+  {% csrf_token %}
+  <!--<dt>species</dt><dd>{{ animal.species }}</dd>-->
+  <dt>sex</dt><dd>{{ animal.sex }}</dd>
+  <dt>band</dt><dd>{{ animal.band }}</dd>
+  <dt>song speed</dt><dd>{{ animal.song_speed }}</dd>
+  <dt>call speed</dt><dd>{{ animal.call_speed }}</dd>
+  <dt>repeats</dt><dd>{{ animal.repeats }}</dd>
+  <dt>seq. variability</dt><dd>{{ animal.seqvar }}</dd>  
+  <dt>uuid</dt><dd>{{ animal.uuid }}</dd>
+  <dt>alive</dt><dd>{{ animal.alive }}</dd>
+  <dt>acquired</dt><dd>{{ animal.print_hatch_date }}</dd>
+  <dt>age</dt><dd>{{ animal.age_days }}</dd>
+  <dt>nest</dt><dd>{{ animal.nest }}</dd>
+  <dt>sire</dt><dd>{% if animal.sire.band %}<a href="{{ animal.sire.get_absolute_url }}">{{ animal.sire }}</a>{% endif %}</dd>
+  <dt>dam</dt><dd>{% if animal.dam.band %}<a href="{{ animal.dam.get_absolute_url }}">{{ animal.dam }}</a>{% endif %}</dd>
+
+  <div class="form-group {% if form.notes.errors %}has-error{% endif %}">
+        <label for="notes" class="col-sm-2 control-label">Notes</label>
+        <div class="col-sm-3">
+          {% render_field form.notes class+="form-control" %}
+        </div>
+  </div>
+
+  
+  <div class="form-group {% if form.user.errors %}has-error{% endif %}">
+        <label for="id_reserved_by" class="col-sm-2 control-label">Reserved by</label>
+        <div class="col-sm-3">
+          {% render_field form.reserved_by class+="form-control" %}
+        </div>
+  </div>
+  </dl>
+  <div class="form-group">
+      <div class="col-sm-offset-2 col-sm-10">
+          <input type="submit" class="btn btn-default" value="Save" >
+        </div>
+      </div>
+  
+</form>
+<a href="{% url 'admin:birds_animal_change' animal.uuid %}">edit bird</a><br/>
+<!--<a href="{% url 'birds:new_animal' %}">add another bird</a><br/> -->
+
+<h3>Events</h3>
+
+<table class="table table-striped table-condensed">
+  <thead>
+    <th>Status</th>
+    <th>Date</th>
+    <th>Location</th>
+    <th>Comments</th>
+    <th>Created</th>
+  </thead>
+  <tbody>
+    {% for event in view.event_list %}
+        <tr>
+          <td>{{ event.status }}</td>
+          <td>{{ event.date }}</td>
+          <td>{{ event.location }}</td>
+          <td>{{ event.description }}</td>
+                    <td>{{ event.created }}</td>
+
+          <td></td>
+        </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<a href="events/new/">add event</a><br/>
+
+
+<h3>Claims</h3>
+
+<table class="table table-striped table-condensed">
+  <thead>
+    <th>User</th>
+    <th>Date</th>
+  </thead>
+  <tbody>
+    {% for claim in view.claim_list %}
+        <tr>
+          <td>{{ claim.username }}</td>
+          <td>{{ claim.date }}</td>
+          <td></td>
+        </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<!-- <a href="events/new/">add event</a><br/> -->
+<h3>Children</h3>
+{#% include "birds/animal_table.html" %#}
+
+<table class="table table-striped table-condensed">
+  <thead>
+    <th>Band</th>
+    <th>Location</th>
+    <th>Age</th>
+  </thead>
+  <tbody>
+    {% for child in view.children %}
+        <tr>
+          <td>{{ child.band }}</td>
+          <td>{{ child.last_location }}</td>
+          <td>{{ child.age_days }}</td>
+          <td></td>
+        </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -105,7 +105,7 @@ class LocationAdmin(admin.ModelAdmin):
     
 class NestAdmin(admin.ModelAdmin):
     date_hierarchy = 'created'
-    fields = ('name', 'nest_bands1', 'nest_bands2',
+    fields = ('name', 'nest_bands1', 'nest_bands2', 'reserved_by',
  'uuid')
     list_display = ('name',  'nest_bands', 'created', 'uuid')
     search_fields = ('name', 'nest_bands')

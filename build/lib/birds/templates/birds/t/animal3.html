@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %} brainard-lab : bird : {{ animal.name }} {% endblock %}
+
+{% block content %}
+<h2>{{ animal.name }}</h2>
+
+<hr>
+<form action="{% url 'birds:animal' animal.uuid %}" class="form-horizontal" method="post" role="form">
+</form>
+<a href="{% url 'admin:birds_animal_change' animal.uuid %}">edit bird</a><br/>
+<a href="{% url 'birds:new_animal' %}">add another bird</a><br/>
+
+<h3>Events</h3>
+
+<table class="table table-striped table-condensed">
+  <thead>
+    <th>Status</th>
+    <th>Date</th>
+    <th>Location</th>
+    <th>Comments</th>
+  </thead>
+  <tbody>
+    {% for event in event_list %}
+        <tr>
+          <td>{{ event.status }}</td>
+          <td>{{ event.date }}</td>
+          <td>{{ event.location }}</td>
+          <td>{{ event.description }}</td>
+          <td></td>
+        </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<a href="events/new/">add event</a><br/>
+
+
+<h3>Children</h3>
+{% include "birds/animal_table.html" %}
+
+{% endblock %}

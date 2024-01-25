@@ -6,7 +6,7 @@ from django import forms
 
 from django.contrib.auth.models import User
 from birds.models import Animal, Event, Status, Location, Color, Species, GeneticParent, Parent, Nest, Mating, Claim, NestEvent, Egg, EggEvent, EggEventCode, ParentEgg
-
+from birds.cron import update_age_days
 
 import ipdb
 
@@ -126,6 +126,10 @@ class BandingForm(forms.Form):
                        band_color2=data['band_color2'], band_number2=data['band_number2'],   
                        nest=data['nest'])
         chick.save()
+
+        chick.update_age_days()
+        #birds.cron.update_age_days(chick)
+        
         if data['acq_status'].name == 'hatched':
             Parent.objects.create(child=chick, parent=sire)
             Parent.objects.create(child=chick, parent=dam)
@@ -382,6 +386,41 @@ class AnimalForm(forms.ModelForm):
     class Meta:
         model = Animal
         fields = ['sex', 'reserved_by', 'notes']
+
+class NestForm(forms.ModelForm):
+
+    ## Fields specified here to allow required=False
+    notes = forms.CharField(widget=forms.Textarea, required=False)
+    reserved_by = forms.ModelChoiceField(queryset=User.objects.all(),
+                                          required=False,
+                                         to_field_name='username')
+
+    def clean(self):
+        super(NestForm, self).clean()
+        data = {}
+        for key, val in self.cleaned_data.items():
+            if not (val is None or val == ''):
+                data[key] = val
+
+        ## Also setting claim to blank
+        if not 'reserved_by' in data:
+            data['reserved_by'] = None
+
+        ## Setting date of action
+        #if not 'date' in data:
+        #    data['date'] = datetime.date.today
+
+        return data
+
+    # def update_claims(self, animal):
+    #     claim = Claim(animal = animal,
+    #                   username = self.cleaned_data['reserved_by'],
+    #                   date = self.cleaned_data['date']())
+    #     claim.save()
+
+    class Meta:
+        model = Nest
+        fields = [ 'reserved_by', 'notes']
 
 class MatingEntryForm(forms.ModelForm):
 

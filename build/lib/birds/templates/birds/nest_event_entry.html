@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load widget_tweaks %}
+
+{% block title %} brainard-lab : bird colony : add nest event {% endblock title%}
+
+
+{% block content %}
+
+<div class="panel panel-default">
+  <div class="panel-heading"> 
+    <h3 class="panel-title">New event</h3>
+  </div>
+  <div class="panel-body">
+ {#<!--   <form action="{% url 'birds:animal' animal.uuid %}" class="form-horizontal" method="post" role="form">-->#}
+   <form action="{% url 'birds:nest_event'   %}" class="form-horizontal" method="post" role="form">
+      {% csrf_token %}
+      <p><strong>Instructions</strong>: This form is for adding an nest event to the
+        database. Events track each nests's life history and allow us to
+        determine its current parents, etc.  You can use the admin interface to add events as well.</p>
+
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <div class="form-group {% if form.nest.errors %}has-error{% endif %}">
+        <label for="nest" class="col-sm-2 control-label">Nests *</label>
+        <div class="col-sm-5">
+          {% render_field form.nest class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.status.errors %}has-error{% endif %}">
+        <label for="status" class="col-sm-2 control-label">Event type * </label>
+        <div class="col-sm-5">
+          {% render_field form.status class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.status.errors %}has-error{% endif %}">
+        <label for="number" class="col-sm-2 control-label">Number of event type * </label>
+        <div class="col-sm-5">
+          {% render_field form.number class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group {% if form.date.errors %}has-error{% endif %}">
+        <label for="date" class="col-sm-2 control-label">Event date * </label>
+        <div class="col-sm-3">
+          <div class="input-group date" id="datetimepicker1">
+            {% render_field form.date class+="form-control" data-format="MM/dd/YYYY" %}
+            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+
+
+      <div class="form-group {% if form.entered_by.errors %}has-error{% endif %}">
+        <label for="entered_by" class="col-sm-2 control-label">Entered by * </label>
+        <div class="col-sm-3">
+          {% render_field form.entered_by class+="form-control" %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+          <button type="submit" class="btn btn-default">Add event</button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+{% endblock %}

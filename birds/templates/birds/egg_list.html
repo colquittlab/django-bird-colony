@@ -16,8 +16,11 @@
   
   {% render_table table %}
   
-<h3><a href="{% url 'birds:new_eggs' %}">add new eggs</a></h3>
-<h3><a href="{% url 'admin:birds_eggs_changelist' %}">edit eggs</a><br/></h3>
+  <h3><a href="{% url 'birds:new_eggs' %}">add new eggs</a></h3>
+
+ {% comment %}
+  <h3><a href="{% url 'admin:birds_eggs_changelist' %}">edit eggs</a><br/></h3>
+  {% endcomment %}
 </body>
 </html>
 

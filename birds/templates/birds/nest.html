@@ -2,15 +2,42 @@
 
 {% block title %} Colquitt lab : nest : {{ nest.name }} {% endblock %}
 
+{% load widget_tweaks %}
+
 {% block content %}
 <h2>{{ nest.name }}</h2>
 
 <hr>
 <dl class="dl-horizontal">
+  <form action="{% url 'birds:nest' nest.uuid %}" class="form-horizontal" method="post" role="form">
+  <!-- <form action="" class="form-horizontal" method="post" role="form"> -->
+  {% csrf_token %}
   <dt>sire</dt><dd>{% if nest.sire %}<a href="{{ nest.sire.get_absolute_url }}">{{ nest.sire }}</a>{% endif %}</dd>
   <dt>dam</dt><dd>{% if nest.dam %}<a href="{{ nest.dam.get_absolute_url }}">{{ nest.dam }}</a>{% endif %}</dd>
 
-</dl>
+  <div class="form-group {% if form.notes.errors %}has-error{% endif %}">
+    <label for="notes" class="col-sm-2 control-label">Notes</label>
+       <div class="col-sm-3">
+          {% render_field form.notes class+="form-control" %}
+        </div>
+  </div>
+
+  <!--
+   <div class="form-group {% if form.user.errors %}has-error{% endif %}">
+        <label for="id_reserved_by" class="col-sm-2 control-label">Reserved by</label>
+        <div class="col-sm-3">
+          {% render_field form.reserved_by class+="form-control" %}
+        </div>
+  </div>
+  </dl>
+  <div class="form-group">
+      <div class="col-sm-offset-2 col-sm-10">
+          <input type="submit" class="btn btn-default" value="Save" >
+        </div>
+  </div>
+-->
+  </form>
+
 <a href="{% url 'admin:birds_nest_change' nest.uuid %}">edit nest</a><br/>
 
 <h3>Events</h3>

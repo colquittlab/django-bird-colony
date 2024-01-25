@@ -13,7 +13,7 @@ from django.urls import reverse
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db.models import OuterRef, Subquery, Sum, Count, Func, F, Q
+from django.db.models import OuterRef, Subquery, Sum, Count, Func, F, Q, Min, Max
 from django.db.models.functions import Coalesce
 from sql_util.utils import SubqueryCount
 from auditlog.registry import auditlog
@@ -145,7 +145,11 @@ class Nest(Location):
                                     related_name='nest_band2',
                                     on_delete=models.SET_NULL,
                                      blank=True, null=True)
-
+    reserved_by = models.ForeignKey(settings.AUTH_USER_MODEL,
+                                    blank=True, null=True,
+                                    on_delete=models.SET(get_sentinel_user),
+                                    help_text="mark nest as reserved for a specific user")
+    notes = models.TextField(null=True, blank=True)
     objects = NestManager()
 
     def current_mating(self):
@@ -396,8 +400,27 @@ class Animal(models.Model):
             return None
 
     
-    #def hatch_date(self):
-        
+
+    def update_age_days(self):
+    
+        """ Returns days since birthdate if alive, age at death if dead, or None if unknown"""
+        #q_birth = self.event_set.filter(status__name="hatched").aggregate(d=Min("date"))
+        q_birth = self.hatch_date
+        #if q_birth["d"] is None:
+        if q_birth is None:
+            return None
+        if self.is_alive:
+            self.age_days = (datetime.date.today() - q_birth).days
+        else:
+            q_death = self.event_set.filter(status__count__lt=0).aggregate(d=Max("date"))
+            self.age_days = (q_death["d"] - q_birth["d"]).days
+
+        self.save()    
+
+    def is_alive(self):
+        newest = Event.objects.filter(animal=self).order_by('-created')
+        qs = qs.annotate(last_location=Subquery(newest.values('location__name')))
+        return qs.annotate(alive=ThreshSum("event__status__count"))
     
     def name(self):
         #
