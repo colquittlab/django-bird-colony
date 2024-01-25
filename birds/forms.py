@@ -6,7 +6,6 @@ from django import forms
 
 from django.contrib.auth.models import User
 from birds.models import Animal, Event, Status, Location, Color, Species, GeneticParent, Parent, Nest, Mating, Claim, NestEvent, Egg, EggEvent, EggEventCode, ParentEgg
-from birds.cron import update_age_days
 
 import ipdb
 
@@ -126,7 +125,6 @@ class BandingForm(forms.Form):
                        band_color2=data['band_color2'], band_number2=data['band_number2'],   
                        nest=data['nest'])
         chick.save()
-
         chick.update_age_days()
         #birds.cron.update_age_days(chick)
         
@@ -211,6 +209,7 @@ class ClutchForm(forms.Form):
                            nest=self.cleaned_data['nest'],
                            hatch_date=self.cleaned_data['hatch_date'])
             chick.save()
+            chick.update_age_days()
             Parent.objects.create(child=chick, parent=sire)
             Parent.objects.create(child=chick, parent=dam)
 
