@@ -42,5 +42,5 @@ class EggTable(tables.Table):
     class Meta:
         model = Egg
         template = 'django_tables2/bootstrap.html'
-        sequence = ('nest', 'sire', 'dam', 'lay_date', 'created')
-        fields = ('nest', 'sire', 'dam', 'lay_date', 'created')
+        sequence = ('nest', 'location', 'uuid', 'sire', 'dam', 'lay_date', 'created')
+        fields = ('nest', 'location', 'uuid', 'sire', 'dam', 'lay_date', 'created')

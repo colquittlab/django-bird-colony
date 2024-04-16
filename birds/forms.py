@@ -49,7 +49,45 @@ class NestEventForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(NestEventForm, self).__init__(*args, **kwargs)
 
-        
+class EggEventForm(forms.ModelForm):
+
+    class Meta:
+        model = EggEvent
+        fields = ["egg", "date", "event", "location", "description", "entered_by"]
+
+    def __init__(self, *args, **kwargs):
+        super(EggEventForm, self).__init__(*args, **kwargs)
+        #ipdb.set_trace()
+        if len(self.initial.values())==4:
+            
+            egg_qs = Egg.objects.filter(uuid=self.initial.get('uuid'))
+            egg_obj = egg_qs[0]
+            self.fields['egg'] = forms.ModelChoiceField(queryset=egg_qs)
+            
+            current_location = egg_obj.location
+            if current_location is None:
+                current_location = egg_obj.nest
+            self.fields['location'] = forms.ModelChoiceField(queryset = Location.objects.filter(name=self.initial.get('location')))
+        else:
+            pass
+
+    def create_event(self):
+#        ipdb.set_trace()
+        data = self.data
+        if Status.objects.get(id=data['event']).name == 'moved':
+            Egg.objects.filter(uuid=data['egg']).update(location=data['location'])
+
+
+        #ipdb.set_trace()
+        evt = EggEvent(egg=Egg.objects.get(uuid=data['egg']),
+                    date=data['date'],
+                    event=EggEventCode.objects.get(id=data['event']),
+                    description=data['description'],
+                    location=Location.objects.get(id=data['location']),
+                    entered_by=User.objects.get(id=data['entered_by']))
+        evt.save()
+        return(evt)
+    
 class BandingForm(forms.Form):
     acq_status = forms.ModelChoiceField(queryset=Status.objects.filter(count=1),
                                         initial=Status.objects.get(name__contains='hatched').id)
@@ -260,7 +298,6 @@ class EggForm(forms.Form):
         for i in range(self.cleaned_data['egg_number']):
 
             if self.cleaned_data['nest'] is not None:
-
                 nest_obj = Nest.objects.filter(name=self.cleaned_data['nest'])[0]
                 sire = nest_obj.current_mating().sire
                 dam = nest_obj.current_mating().dam

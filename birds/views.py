@@ -19,7 +19,7 @@ from django_tables2 import RequestConfig
 from django_tables2 import SingleTableMixin, SingleTableView
 from birds.models import Animal, Event, Nest, Mating, Egg
 from birds.serializers import AnimalSerializer, AnimalDetailSerializer, EventSerializer
-from birds.forms import ClutchForm, BandingForm, EventForm, AnimalSearchForm, AnimalForm, NestEventForm, MatingEntryForm, EggForm
+from birds.forms import ClutchForm, BandingForm, EventForm, AnimalSearchForm, AnimalForm, NestEventForm, MatingEntryForm, EggForm, EggEventForm
 
 from .tables import AnimalTable, NestTable, MatingTable, EggTable
 
@@ -367,7 +367,8 @@ class BandingEntry(generic.FormView):
 
     def form_valid(self, form, **kwargs):
         chick = form.create_chick()
-        return HttpResponseRedirect(reverse('birds:animal', args=(chick.pk,)))
+        #return HttpResponseRedirect(reverse('birds:animal', args=(chick.pk,)))
+        return HttpResponseRedirect(reverse('birds:animals'))
 
 class NestEventEntry(generic.FormView):
     template_name = "birds/nest_event_entry.html"
@@ -417,6 +418,34 @@ class EventEntry(generic.FormView):
         event = form.create_event()
         return HttpResponseRedirect(reverse('birds:new_event', args=(event.animal.pk,)))
 
+class EggEventEntry(generic.FormView):
+    template_name = "birds/egg_event_entry.html"
+    form_class = EggEventForm
+ 
+    def get_initial(self):
+        initial = super(EggEventEntry, self).get_initial()      
+        try:
+            #ipdb.set_trace()
+            uuid = self.kwargs["uuid"]
+            egg = Egg.objects.get(uuid=uuid)
+            #egg_obj = egg[0]
+            initial['egg'] = egg
+            initial['uuid'] = uuid
+
+            current_location = egg.location
+            if current_location is None:
+                current_location = egg.nest
+            initial['location'] = current_location
+        except:
+            pass
+        initial['entered_by'] = self.request.user
+        return initial
+
+    def form_valid(self, form, **kwargs):        
+        #event = form.save()
+        event = form.create_event()
+        return HttpResponseRedirect(reverse('birds:egg_event', args=(event.egg.pk,)))
+    
 class MatingEntry(generic.FormView):
     template_name = "birds/mating_entry.html"
     form_class = MatingEntryForm

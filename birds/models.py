@@ -82,7 +82,7 @@ class EggEventCode(models.Model):
     name = models.CharField(max_length=16, unique=True)
     description = models.TextField(blank=True, null=True)
     count = models.SmallIntegerField(default=0, choices=((0, '0'), (-1, '-1'), (1, '+1')),
-                                     help_text="1: egg laid; -1: egg removed; 0: no change")
+                                     help_text="1: egg laid/added; -1: egg removed; 0: no change")
     category = models.CharField(max_length=2, choices=(('B','B'),('C','C'),('D','D'),('E','E')),
                                 blank=True, null=True)
     def __str__(self):
@@ -228,8 +228,13 @@ class AnimalManager(models.Manager):
         ## Subquery use described here: https://docs.djangoproject.com/en/2.0/ref/models/expressions
         newest = Event.objects.filter(animal=OuterRef('uuid')).order_by('-created')
         qs = qs.annotate(last_location=Subquery(newest.values('location__name')))
+        qs = qs.annotate(alive=ThreshSum("event__status__count"))
+        #qs = qs.annotate(age_days=Animal.objects.filter(uuid='uuid').update_age_days())
+        #[q.update_age_days() for q in qs]
+        return qs
+        
+        
 
-        return qs.annotate(alive=ThreshSum("event__status__count"))
 
 
 
@@ -250,10 +255,6 @@ class LastClaimManager(models.Manager):
     def get_queryset(self):
         qs = super(LastClaimManager, self).get_queryset()
         return qs.order_by("-date")
-
-#class LastLocationManager(models.Manager):
-#    """ Filters queryset so that only the most recent location is returned """
-#    def get_queryset(self):
 
 class ParentEgg(models.Model):
     egg = models.ForeignKey('Egg', related_name="+", on_delete=models.CASCADE)
@@ -301,6 +302,12 @@ class Egg(models.Model):
                              null=True,
                              blank=True,
                              related_name='egg_nest')
+
+    location = models.ForeignKey('Location',
+                             on_delete=models.PROTECT,
+                             null=True,
+                             blank=True,
+                             related_name='egg_location')
 
     reserved_by = models.ForeignKey(settings.AUTH_USER_MODEL,
                                     blank=True, null=True,
@@ -404,9 +411,21 @@ class Animal(models.Model):
     def update_age_days(self):
     
         """ Returns days since birthdate if alive, age at death if dead, or None if unknown"""
-        #q_birth = self.event_set.filter(status__name="hatched").aggregate(d=Min("date"))
         q_birth = self.hatch_date
-        #if q_birth["d"] is None:
+        if q_birth is None:
+            return None
+        if self.is_alive:
+            self.age_days = (datetime.date.today() - q_birth).days
+        else:
+            q_death = self.event_set.filter(status__count__lt=0).aggregate(d=Max("date"))
+            self.age_days = (q_death["d"] - q_birth["d"]).days
+
+        self.save()
+
+    def calc_age_days(self):
+    
+        """ Returns days since birthdate if alive, age at death if dead, or None if unknown"""
+        q_birth = self.hatch_date
         if q_birth is None:
             return None
         if self.is_alive:
@@ -451,8 +470,6 @@ class Animal(models.Model):
         """
         return self.event_set.filter(status__count=1).order_by('date').first()
 
-
-
     # def last_location(self):
     #    """ Returns the location recorded in the most recent event """
     #    return self.event_set.order_by("-date", "-created").first().location
@@ -495,7 +512,7 @@ class EggEvent(models.Model):
     egg = models.ForeignKey('Egg', on_delete=models.CASCADE)
     date = models.DateField(default=datetime.date.today)
     event = models.ForeignKey('EggEventCode', on_delete=models.PROTECT)
-    #location = models.ForeignKey('Location', blank=True, null=True, on_delete=models.SET_NULL)
+    location = models.ForeignKey('Location', blank=True, null=True, on_delete=models.SET_NULL)
     description = models.TextField(blank=True)
     entered_by = models.ForeignKey(settings.AUTH_USER_MODEL,
                                    on_delete=models.SET(get_sentinel_user))
@@ -545,3 +562,9 @@ class Claim(models.Model):
     object = models.Manager()
 
 auditlog.register(Mating)
+
+#def update_age_days_all():
+#    qs = Animal.objects.all()
+#    [q.update_age_days() for q in qs]
+
+    

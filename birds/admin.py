@@ -5,6 +5,7 @@ from django.contrib import admin
 from birds.models import Species, Color, Location, Animal, Event, Status, Age, Parent, Nest, Mating, NestEvent, EggEventCode, Egg, EggEvent
 from django.db import models
 
+admin.site.site_url = '/birds'
 
 
 class ParentInline(admin.TabularInline):
@@ -47,7 +48,7 @@ class AnimalInline(admin.TabularInline):
 
 class AnimalAdmin(admin.ModelAdmin):
  
-    fields = ('sex', 'nest', 'band_color', 'band_number', 'band_color2', 'band_number2', 'location', 'hatch_date', 'song_speed','call_speed','seqvar','repeats', 'reserved_by')    
+    fields = ('sex', 'species', 'nest', 'band_color', 'band_number', 'band_color2', 'band_number2', 'location', 'hatch_date', 'song_speed','call_speed','seqvar','repeats', 'reserved_by')    
     list_display = ('name', 'band', 'age_days', 'species', 'nest', 'uuid', 'sex', 'location', 'reserved_by')
     list_filter = ('sex', 'nest', 'location', 'band_color', 'reserved_by')
     search_fields = ('band_color__name', '=band_number', 'nest__name', 'location__name')
