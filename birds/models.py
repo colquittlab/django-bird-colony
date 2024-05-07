@@ -233,12 +233,6 @@ class AnimalManager(models.Manager):
         #[q.update_age_days() for q in qs]
         return qs
         
-        
-
-
-
-
-
 class LivingAnimalManager(AnimalManager):
     def get_queryset(self):
         return super(LivingAnimalManager, self).get_queryset().filter(alive__exact=True)
@@ -337,7 +331,7 @@ class Animal(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True, editable=False)
     species = models.ForeignKey('Species', on_delete=models.PROTECT)
     sex = models.CharField(max_length=2, choices=SEX_CHOICES)
-    age_days = models.IntegerField(blank=True, null=True)
+    #age_days = models.IntegerField(blank=True, null=True)
     song_speed = models.FloatField(max_length=4,null=True, blank=True)
     call_speed = models.FloatField(max_length=4,null=True, blank=True)
     seqvar = models.CharField(max_length=2, choices=BINARY_CHOICES,null=True, blank=True)
@@ -422,19 +416,22 @@ class Animal(models.Model):
 
         self.save()
 
-    def calc_age_days(self):
+    @property
+    def age_days(self):
     
         """ Returns days since birthdate if alive, age at death if dead, or None if unknown"""
+
         q_birth = self.hatch_date
+
         if q_birth is None:
             return None
-        if self.is_alive:
-            self.age_days = (datetime.date.today() - q_birth).days
-        else:
-            q_death = self.event_set.filter(status__count__lt=0).aggregate(d=Max("date"))
-            self.age_days = (q_death["d"] - q_birth["d"]).days
+        if self.alive:
 
-        self.save()    
+            return (datetime.date.today() - q_birth).days
+        else:
+            q_death = self.event_set.filter(status__count__lt=0).aggregate(d=models.Max("date"))
+
+            return (q_death["d"] - q_birth).days
 
     def is_alive(self):
         newest = Event.objects.filter(animal=self).order_by('-created')

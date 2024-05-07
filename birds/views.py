@@ -132,7 +132,7 @@ class AnimalTableList(SingleTableMixin, FilterView):
             #qs = self.model.objects.annotate(age_days=F("age_days")).order_by("age_days")
             qs = self.model.objects.all()
         qsf = AnimalFilter(self.request.GET, queryset=qs).qs
-        qsf = qsf.order_by('-age_days')
+        qsf = qsf.order_by('-hatch_date')
         return qsf
 
 class EventList(FilterView, generic.list.MultipleObjectMixin):
